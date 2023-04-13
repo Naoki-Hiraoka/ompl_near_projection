@@ -12,7 +12,7 @@ pkg_check_modules(EIGEN eigen3>=3.2.7)
 
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES choreonoid_ompl_test
+  LIBRARIES ompl_near_projection
 #  CATKIN_DEPENDS other_catkin_pkg
   DEPENDS OMPL EIGEN
 )
