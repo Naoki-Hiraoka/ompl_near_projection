@@ -13,7 +13,6 @@ namespace ompl_near_constraint{
     if(nearConstraint_) nearConstraint_->projectNear(state, near);
     else constraint_->project(state);
     space_->enforceBounds(state);
-    // 一定確率でgoalへ TODO
   }
 
   void NearProjectedStateSampler::sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) {

@@ -11,6 +11,7 @@ namespace ompl_near_constraint{
     //virtual bool project(ompl::base::State *state) const override;
     // nearはconstraintを満たしている想定. nearの情報を利用することで、projectの成功率を上げる.
     // 例えば、nearを初期値として、constraint下でstateからの距離を可能な限り小さくする最適化計算を行う
+    // projection失敗しても、stateはprojection後の値が入る. 返り値はfalseになる.
     // 名前がprojectだと、親クラスのproject(State * state)を消してしまうみたいなので、prejectNearという名前にした
     virtual bool projectNear(ompl::base::State *state, const ompl::base::State *near) const;
   };

@@ -27,6 +27,7 @@ include_directories(
 add_library(${PROJECT_NAME}
   src/NearConstraint.cpp
   src/NearProjectedStateSpace.cpp
+  src/NearGoalSpace.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

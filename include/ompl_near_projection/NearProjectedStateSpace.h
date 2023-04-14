@@ -12,9 +12,11 @@ namespace ompl_near_constraint{
     NearProjectedStateSampler(const NearProjectedStateSpace *space, ompl::base::StateSamplerPtr sampler);
 
     // constraint->projectNear(state, near)を使う
+    // nearはconstraintを満たしている想定
     void sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) override;
 
     // constraint->projectNear(state, near)を使う
+    // nearはconstraintを満たしている想定
     void sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) override;
   protected:
     const NearConstraintPtr nearConstraint_;
