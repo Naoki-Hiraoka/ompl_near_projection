@@ -11,7 +11,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(EIGEN eigen3>=3.2.7)
 
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
   LIBRARIES ompl_near_projection
 #  CATKIN_DEPENDS other_catkin_pkg
   DEPENDS OMPL EIGEN

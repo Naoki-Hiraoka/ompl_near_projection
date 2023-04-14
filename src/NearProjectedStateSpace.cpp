@@ -1,6 +1,6 @@
 #include <ompl_near_projection/NearProjectedStateSpace.h>
 
-namespace ompl_near_constraint{
+namespace ompl_near_projection{
 
   NearProjectedStateSampler::NearProjectedStateSampler(const NearProjectedStateSpace *space, ompl::base::StateSamplerPtr sampler) :
     ProjectedStateSampler(space, sampler),

@@ -4,7 +4,7 @@
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 #include <ompl_near_projection/NearConstraint.h>
 
-namespace ompl_near_constraint{
+namespace ompl_near_projection{
   OMPL_CLASS_FORWARD(NearProjectedStateSpace); // NearProjectedStateSpacePtrを定義 (shared_ptr)
 
   class NearProjectedStateSampler : public ompl::base::ProjectedStateSampler {
