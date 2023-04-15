@@ -35,10 +35,15 @@
 #ifndef OMPL_NEAR_PROJECTION_NEARKPIECE1_H
 #define OMPL_NEAR_PROJECTION_NEARKPIECE1_H
 
+#include <ompl/geometric/planners/kpiece/KPIECE1.h>
+
 namespace ompl_near_projection {
   namespace geometric {
     class NearKPIECE1 : public ompl::geometric::KPIECE1 {
-      base::PlannerStatus solve(const base::PlannerTerminationCondition &ptc) override;
+    public:
+      NearKPIECE1(const ompl::base::SpaceInformationPtr &si) : KPIECE1(si) {}
+
+      ompl::base::PlannerStatus solve(const ompl::base::PlannerTerminationCondition &ptc) override;
     };
   }
 };

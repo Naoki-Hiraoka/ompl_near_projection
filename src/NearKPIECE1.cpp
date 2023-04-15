@@ -33,17 +33,18 @@
  *********************************************************************/
 
 #include <ompl_near_projection/NearKPIECE1.h>
+#include <ompl_near_projection/NearGoalSpace.h>
 
 namespace ompl_near_projection {
   namespace geometric {
-    base::PlannerStatus NearKPIECE1::solve(const base::PlannerTerminationCondition &ptc) {
+    ompl::base::PlannerStatus NearKPIECE1::solve(const ompl::base::PlannerTerminationCondition &ptc) {
       checkValidity();
-      base::Goal *goal = pdef_->getGoal().get();
-      auto *goal_s = dynamic_cast<base::GoalSampleableRegion *>(goal);
+      ompl::base::Goal *goal = pdef_->getGoal().get();
+      auto *goal_s = dynamic_cast<ompl::base::GoalSampleableRegion *>(goal);
 
-      Discretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
+      ompl::geometric::Discretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
 
-      while (const base::State *st = pis_.nextStart())
+      while (const ompl::base::State *st = pis_.nextStart())
         {
           auto *motion = new Motion(si_);
           si_->copyState(motion->state, st);
@@ -54,7 +55,7 @@ namespace ompl_near_projection {
       if (disc_.getMotionCount() == 0)
         {
           OMPL_ERROR("%s: There are no valid initial states!", getName().c_str());
-          return base::PlannerStatus::INVALID_START;
+          return ompl::base::PlannerStatus::INVALID_START;
         }
 
       if (!sampler_)
@@ -66,7 +67,7 @@ namespace ompl_near_projection {
       Motion *solution = nullptr;
       Motion *approxsol = nullptr;
       double approxdif = std::numeric_limits<double>::infinity();
-      base::State *xstate = si_->allocState();
+      ompl::base::State *xstate = si_->allocState();
 
       while (!ptc)
         {
@@ -74,7 +75,7 @@ namespace ompl_near_projection {
 
           /* Decide on a state to expand from */
           Motion *existing = nullptr;
-          Discretization<Motion>::Cell *ecell = nullptr;
+          ompl::geometric::Discretization<Motion>::Cell *ecell = nullptr;
           disc_.selectMotion(existing, ecell);
           assert(existing);
 
@@ -91,7 +92,7 @@ namespace ompl_near_projection {
             sampler_->sampleUniformNear(xstate, existing->state, maxDistance_);
           }
 
-          std::pair<base::State *, double> fail(xstate, 0.0);
+          std::pair<ompl::base::State *, double> fail(xstate, 0.0);
           bool keep = si_->checkMotion(existing->state, xstate, fail);
           if (!keep && fail.second > minValidPathFraction_)
             keep = true;
@@ -147,7 +148,7 @@ namespace ompl_near_projection {
             }
 
           /* set the solution path */
-          auto path(std::make_shared<PathGeometric>(si_));
+          auto path(std::make_shared<ompl::geometric::PathGeometric>(si_));
           for (int i = mpath.size() - 1; i >= 0; --i)
             path->append(mpath[i]->state);
           pdef_->addSolutionPath(path, approximate, approxdif, getName());
