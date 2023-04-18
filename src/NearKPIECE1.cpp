@@ -79,23 +79,29 @@ namespace ompl_near_projection {
           disc_.selectMotion(existing, ecell);
           assert(existing);
 
+          bool keep = false;
+
           /* sample random state (with goal biasing) */
           if ((goal_s != nullptr) && rng_.uniform01() < goalBias_ && goal_s->canSample()) {
-            // この部分だけがKPIECE1と異なる
             auto *goal_s_near = dynamic_cast<NearGoalSpace *>(goal_s);
             if (goal_s_near != nullptr) {
+              // この部分がKPIECE1と異なる
               goal_s_near->sampleTo(xstate, existing->state);
+              keep = true; // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
             } else {
               goal_s->sampleGoal(xstate);
+              std::pair<ompl::base::State *, double> fail(xstate, 0.0);
+              keep = si_->checkMotion(existing->state, xstate, fail);
+
+              if (!keep && fail.second > minValidPathFraction_)
+                keep = true;
             }
           } else {
             sampler_->sampleUniformNear(xstate, existing->state, maxDistance_);
+            // この部分がKPIECE1と異なる
+            keep = true; // sampleUniformNearの出力へのmotionが存在する前提. checkMotionを省略することで高速化
           }
 
-          std::pair<ompl::base::State *, double> fail(xstate, 0.0);
-          bool keep = si_->checkMotion(existing->state, xstate, fail);
-          if (!keep && fail.second > minValidPathFraction_)
-            keep = true;
 
           if (keep)
             {

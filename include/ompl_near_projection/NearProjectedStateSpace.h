@@ -13,10 +13,12 @@ namespace ompl_near_projection{
 
     // constraint->projectNear(state, near)を使う
     // nearはconstraintを満たしている想定
+    // 返り値のstateは、nearからstateへの、StateSpaceを満たすmotionが存在するという保証がある
     void sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) override;
 
     // constraint->projectNear(state, near)を使う
     // nearはconstraintを満たしている想定
+    // 返り値のstateは、nearからstateへの、StateSpaceを満たすmotionが存在するという保証がある
     void sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) override;
   protected:
     const NearConstraintPtr nearConstraint_;

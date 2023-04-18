@@ -76,15 +76,19 @@ namespace ompl_near_projection {
           Motion *existing = pdf_.sample(rng_.uniform01());
           assert(existing);
 
+          bool keep = false;
+
           // Sample random state in the neighborhood (with goal biasing)
           if ((goal_s != nullptr) && rng_.uniform01() < goalBias_ && goal_s->canSample())
             {
-              // この部分だけがKPIECE1と異なる
               auto *goal_s_near = dynamic_cast<NearGoalSpace *>(goal_s);
               if (goal_s_near != nullptr) {
+                // この部分だけがKPIECE1と異なる
                 goal_s_near->sampleTo(xstate, existing->state);
+                keep = true; // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
               } else {
                 goal_s->sampleGoal(xstate);
+                keep = si_->checkMotion(existing->state, xstate);
               }
 
               // Compute neighborhood of candidate motion
@@ -96,6 +100,8 @@ namespace ompl_near_projection {
               // Sample a state in the neighborhood
               if (!sampler_->sampleNear(xstate, existing->state, maxDistance_))
                 continue;
+
+              keep = true; // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
 
               // Compute neighborhood of candidate state
               xmotion->state = xstate;
@@ -111,7 +117,7 @@ namespace ompl_near_projection {
             }
 
           // Is motion good?
-          if (si_->checkMotion(existing->state, xstate))
+          if (keep)
             {
               // create a motion
               auto *motion = new Motion(si_);
