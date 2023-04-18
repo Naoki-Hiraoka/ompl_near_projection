@@ -51,9 +51,9 @@ namespace ompl_near_projection{
         WrapperStateSpace::interpolate(previous, to, delta_ / dist, scratch);
 
         // Project new state onto constraint manifold
-        if (!nearConstraint_->projectNear(scratch, previous)  // not on manifold // この行がProjectedStateSpace::discreteGeodesicと異なる
-            || !(interpolate || svc->isValid(scratch))      // not valid
-            || (step = distance(previous, scratch)) > lambda_ * delta_)  // deviated
+        // ここがProjectedStateSpace::discreteGeodesicと異なる
+        nearConstraint_->projectNear(scratch, previous); // scratchはambientSpace及びconstraintを必ず満たしている前提. scratchのisValidチェックは省略可能で高速化. 逆に、projectの誤差によってscratchが僅かにvalidでない場合があるので、むしろscratchのvalidチェックはしてはいけない. (特にConstrainedSpaceInformation->interpolate()時に、問題になる)
+        if ((step = distance(previous, scratch)) > lambda_ * delta_)  // deviated
           break;
 
         // Check if we have wandered too far
