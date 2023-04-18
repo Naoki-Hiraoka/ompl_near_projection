@@ -13,11 +13,12 @@ namespace ompl_near_projection{
       : Constraint(ambientDim, coDim, tolerance)
     {
     }
-    // nearはconstraintを満たしている想定. nearの情報を利用することで、projectの成功率を上げる.
-    // 例えば、nearを初期値として、constraint下でstateからの距離を可能な限り小さくする最適化計算を行う
-    // projection失敗しても、stateはprojection後の値が入る. 返り値はfalseになる.
-    // 名前がprojectだと、親クラスのproject(State * state)を消してしまうみたいなので、prejectNearという名前にした
-    virtual bool projectNear(ompl::base::State *state, const ompl::base::State *near) const;
+
+    // nearから、constraintを満たす範囲で可能な限りstateに近づくようにprojectionし、結果をstateに入れて返す.
+    // nearがconstraintを満たしている場合、返り値のstateも必ずconstraintを満たす. また、constaintを満たしつつnearと返り値のstateを結ぶmotionが必ず存在する.
+    // constraintが「まずconstraint1を満たす. 残りの自由度でconstraint2を満たす」というもので、nearがconstraint1を満たしている場合、返り値のstateも必ずconstraint1を満たす. また、constraint1を満たしつつnearと返り値のstateを結ぶmotionが必ず存在する
+    // projectionに失敗しても、stateはprojection後の値が入る. 返り値はfalseになる.
+    virtual bool projectNearValid(ompl::base::State *state, const ompl::base::State *near) const = 0;
 
   };
 

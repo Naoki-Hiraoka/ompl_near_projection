@@ -7,12 +7,19 @@
 namespace ompl_near_projection{
   class NearGoalSpace : public ompl::base::GoalSpace {
   public:
-    NearGoalSpace(const ompl::base::SpaceInformationPtr &si) : GoalSpace(si) {}
+    // goal spaceは、NearProjectedStateSpaceである必要がある
+    NearGoalSpace(const ompl::base::SpaceInformationPtr &si) :
+      GoalSpace(si)
+    {
+    }
 
-    // sourceをGoalSpaceのconstraintへprojectionしたものをstateとして返す.
-    // projection失敗してもそのままprojection後の値をstateとして返す. 返り値はfalseになる. stateがambientSpaceを満たすためには、sourceがambientSpaceを満たしていて、GoalSpaceのprojectionが「ambientSpaceの制約を満たす範囲内で可能な限りGoalSpaceへprojetionする」という仕様である必要がある.
-    // 返り値のstateは、sourceからstateへの、ambientSpaceを満たすmotionが存在するという保証がある
+    // goal spaceのconstraintは、「まずambientSpaceを満たす. 残りの自由度でGoalSpaceを満たす」というものである必要がある.
+    // sourceはambientSpaceを満たしている必要がある.
+    // sourceから、ambientSpaceを満たす範囲で可能な限りGoalSpaceに近づくようにprojectionし、結果をstateとして返す.
+    // goalSpaceに到達しなくても、途中のstateをstateとして返す. 返り値はfalseになる.
+    // 返り値のstateは、sourceからstateへの、ambientSpaceを満たすmotionが必ず存在するという保証がある
     bool sampleTo(ompl::base::State *state, const ompl::base::State *source) const;
+
   };
 };
 

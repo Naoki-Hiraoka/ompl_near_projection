@@ -34,6 +34,7 @@
 
 #include <ompl_near_projection/NearEST.h>
 #include <ompl_near_projection/NearGoalSpace.h>
+#include <ompl_near_projection/NearConstrainedSpaceInformation.h>
 
 namespace ompl_near_projection {
   namespace geometric {
@@ -41,6 +42,7 @@ namespace ompl_near_projection {
       checkValidity();
       ompl::base::Goal *goal = pdef_->getGoal().get();
       auto *goal_s = dynamic_cast<ompl::base::GoalSampleableRegion *>(goal);
+      auto *goal_s_near = dynamic_cast<NearGoalSpace *>(goal_s); // ここがESTと異なる.
 
       std::vector<Motion *> neighbors;
 
@@ -61,6 +63,7 @@ namespace ompl_near_projection {
 
       if (!sampler_)
         sampler_ = si_->allocValidStateSampler();
+      std::shared_ptr<NearConstrainedValidStateSampler> sampler_near = std::dynamic_pointer_cast<NearConstrainedValidStateSampler>(sampler_); // ここがESTと異なる
 
       OMPL_INFORM("%s: Starting planning with %u states already in datastructure", getName().c_str(), motions_.size());
 
@@ -81,9 +84,8 @@ namespace ompl_near_projection {
           // Sample random state in the neighborhood (with goal biasing)
           if ((goal_s != nullptr) && rng_.uniform01() < goalBias_ && goal_s->canSample())
             {
-              auto *goal_s_near = dynamic_cast<NearGoalSpace *>(goal_s);
               if (goal_s_near != nullptr) {
-                // この部分だけがKPIECE1と異なる
+                // この部分がESTと異なる
                 goal_s_near->sampleTo(xstate, existing->state);
                 keep = true; // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
               } else {
@@ -97,11 +99,16 @@ namespace ompl_near_projection {
             }
           else
             {
-              // Sample a state in the neighborhood
-              if (!sampler_->sampleNear(xstate, existing->state, maxDistance_))
-                continue;
-
-              keep = true; // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
+              if(sampler_near) {
+                // この部分がKPIECE1と異なる
+                sampler_near->sampleNearValid(xstate, existing->state, maxDistance_);
+                keep = true; // sampleNearValidの出力へのmotionが存在する前提. checkMotionを省略することで高速化
+              }else{
+                // Sample a state in the neighborhood
+                if (!sampler_->sampleNear(xstate, existing->state, maxDistance_))
+                  continue;
+                keep = si_->checkMotion(existing->state, xstate);
+              }
 
               // Compute neighborhood of candidate state
               xmotion->state = xstate;

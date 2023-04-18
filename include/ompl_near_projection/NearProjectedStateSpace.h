@@ -11,15 +11,13 @@ namespace ompl_near_projection{
   public:
     NearProjectedStateSampler(const NearProjectedStateSpace *space, ompl::base::StateSamplerPtr sampler);
 
-    // constraint->projectNear(state, near)を使う
-    // nearはconstraintを満たしている想定
-    // 返り値のstateは、nearからstateへの、StateSpaceを満たすmotionが存在するという保証がある
-    void sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) override;
+    // nearはconstraintを満たしている想定.
+    // 返り値のstateは、nearからstateへの、constraintを満たすmotionが必ず存在するという保証がある
+    void sampleUniformNearValid(ompl::base::State *state, const ompl::base::State *near, double distance);
 
-    // constraint->projectNear(state, near)を使う
-    // nearはconstraintを満たしている想定
-    // 返り値のstateは、nearからstateへの、StateSpaceを満たすmotionが存在するという保証がある
-    void sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) override;
+    // nearはconstraintを満たしている想定.
+    // 返り値のstateは、nearからstateへの、constraintを満たすmotionが必ず存在するという保証がある
+    void sampleGaussianValid(ompl::base::State *state, const ompl::base::State *mean, double stdDev);
   protected:
     const NearConstraintPtr nearConstraint_;
   };

@@ -8,17 +8,15 @@ namespace ompl_near_projection{
   {
   }
 
-  void NearProjectedStateSampler::sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, double distance) {
+  void NearProjectedStateSampler::sampleUniformNearValid(ompl::base::State *state, const ompl::base::State *near, double distance) {
     WrapperStateSampler::sampleUniformNear(state, near, distance);
-    if(nearConstraint_) nearConstraint_->projectNear(state, near);
-    else constraint_->project(state);
+    nearConstraint_->projectNearValid(state, near);
     space_->enforceBounds(state);
   }
 
-  void NearProjectedStateSampler::sampleGaussian(ompl::base::State *state, const ompl::base::State *mean, double stdDev) {
+  void NearProjectedStateSampler::sampleGaussianValid(ompl::base::State *state, const ompl::base::State *mean, double stdDev) {
     WrapperStateSampler::sampleGaussian(state, mean, stdDev);
-    if(nearConstraint_) nearConstraint_->projectNear(state, mean);
-    else constraint_->project(state);
+    nearConstraint_->projectNearValid(state, mean);
     space_->enforceBounds(state);
   }
 
@@ -52,7 +50,7 @@ namespace ompl_near_projection{
 
         // Project new state onto constraint manifold
         // ここがProjectedStateSpace::discreteGeodesicと異なる
-        nearConstraint_->projectNear(scratch, previous); // scratchはambientSpace及びconstraintを必ず満たしている前提. scratchのisValidチェックは省略可能で高速化. 逆に、projectの誤差によってscratchが僅かにvalidでない場合があるので、むしろscratchのvalidチェックはしてはいけない. (特にConstrainedSpaceInformation->interpolate()時に、問題になる)
+        nearConstraint_->projectNearValid(scratch, previous); // 返り値のscratchはambientSpace及びconstraintを必ず満たしている. そのため、scratchのisValidチェックは省略可能で高速化. 逆に、projectの誤差によってscratchが僅かにvalidでない場合があるので、むしろscratchのvalidチェックはしてはいけない. (特にConstrainedSpaceInformation->interpolate()時に、問題になる)
         if ((step = distance(previous, scratch)) > lambda_ * delta_)  // deviated
           break;
 
