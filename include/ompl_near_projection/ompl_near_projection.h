@@ -7,5 +7,6 @@
 #include <ompl_near_projection/NearGoalSpace.h>
 #include <ompl_near_projection/NearKPIECE1.h>
 #include <ompl_near_projection/NearEST.h>
+#include <ompl_near_projection/pNearKPIECE1.h>
 
 #endif

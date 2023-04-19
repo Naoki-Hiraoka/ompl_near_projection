@@ -30,6 +30,7 @@ add_library(${PROJECT_NAME}
   src/NearGoalSpace.cpp
   src/NearKPIECE1.cpp
   src/NearEST.cpp
+  src/pNearKPIECE1.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
