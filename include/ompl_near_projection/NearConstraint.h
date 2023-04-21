@@ -20,6 +20,10 @@ namespace ompl_near_projection{
     // projectionに失敗しても、stateはprojection後の値が入る. 返り値はfalseになる.
     virtual bool projectNearValid(ompl::base::State *state, const ompl::base::State *near) const = 0;
 
+    const ompl::base::StateSpace* getStateSpace() const { return stateSpace_; }
+    void setStateSpace(ompl::base::StateSpace* stateSpace) { stateSpace_ = stateSpace; }
+  protected:
+    ompl::base::StateSpace* stateSpace_;
   };
 
 };
