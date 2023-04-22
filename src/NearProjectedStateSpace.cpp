@@ -59,28 +59,30 @@ namespace ompl_near_projection{
 
     auto &&svc = si_->getStateValidityChecker();
 
-    const std::vector<ompl::base::State*>& intermediateStates = static_cast<const NearProjectedStateSpace::StateType*>(to)->intermediateStates;
-    std::vector<ompl::base::State *> path;
-    if(geodesic && intermediateStates.size() > 0){ // geodesicが与えられている場合: interpolate(). 与えられていない場合: simplify(), check(). 特にsimplify時にintermidiateStatesを使ってはいけない
-      for(int i=0;i<intermediateStates.size()+1;i++){
-        if(i==intermediateStates.size()) {
-          copyState(scratch, to);
-        }else{
-          copyState(scratch, intermediateStates[i]);
+    std::vector<ompl::base::State*>& intermediateStates = static_cast<const NearProjectedStateSpace::StateType*>(to)->intermediateStates;
+    std::vector<ompl::base::State *> path{cloneState(from)};
+
+    if(intermediateStates.size() > 0 && distance(intermediateStates[0], from) < delta_) {
+      if(geodesic == nullptr){
+        freeState(scratch);
+        freeState(previous);
+        return true;
+      }else{
+        for(int i=1;i<intermediateStates.size();i++){ // 始点はふくまない
+          copyState(scratch, intermediateStates[i]); // たまにIkの誤差でisValidではないことがあるが、やむなし
           if(distance(previous, scratch) < delta_) continue;
+          NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
+          tmp_state->intermediateStates.resize(1);
+          tmp_state->intermediateStates[0] = cloneState(previous);
+          geodesic->push_back(tmp_state);
+          copyState(previous, scratch);
         }
-        nearConstraint_->projectNearValid(scratch, previous);
-        if ((step = distance(previous, scratch)) > lambda_ * delta_)  // deviated
-          break;
-        total += step;
-        if (total > max)
-          break;
-        const double newDist = distance(scratch, to);
-        if (newDist >= dist)
-          break;
-        dist = newDist;
-        copyState(previous, scratch);
-        geodesic->push_back(cloneState(scratch));
+        freeState(scratch);
+        freeState(previous);
+        for(int i=0;i<intermediateStates.size();i++) freeState(intermediateStates[i]);
+        intermediateStates.resize(1);
+        intermediateStates[0] = cloneState(from);
+        return true;
       }
     }else{
       do
@@ -92,6 +94,8 @@ namespace ompl_near_projection{
           nearConstraint_->projectNearValid(scratch, previous); // 返り値のscratchはambientSpace及びconstraintを必ず満たしている. そのため、scratchのisValidチェックは省略可能で高速化. 逆に、projectの誤差によってscratchが僅かにvalidでない場合があるので、むしろscratchのvalidチェックはしてはいけない. (特にConstrainedSpaceInformation->interpolate()時に、問題になる)
           if ((step = distance(previous, scratch)) > lambda_ * delta_)  // deviated
             break;
+          if(step < delta_ / lambda_) // stacked
+            break;
 
           // Check if we have wandered too far
           total += step;
@@ -99,37 +103,39 @@ namespace ompl_near_projection{
             break;
 
           // Check if we are no closer than before
-          // epsilonの閾値を設けたほうがいいかも TODO
           const double newDist = distance(scratch, to);
           if (newDist >= dist)
             break;
 
           dist = newDist;
-          copyState(previous, scratch);
 
           // Store the new state
-          if (geodesic != nullptr)
-            geodesic->push_back(cloneState(scratch));
-          else
+          if (geodesic != nullptr){
+            NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
+            tmp_state->intermediateStates.resize(1);
+            tmp_state->intermediateStates[0] = cloneState(previous);
+            geodesic->push_back(tmp_state);
+          }else{
             path.push_back(cloneState(scratch));
+          }
+          copyState(previous, scratch);
 
         } while (dist >= tolerance);
-    }
 
-    freeState(scratch);
-    freeState(previous);
-
-    if(dist <= tolerance){
-      if (geodesic != nullptr) {
-        for(int i=0;i<to->as<NearProjectedStateSpace::StateType>()->intermediateStates.size();i++) freeState(to->as<NearProjectedStateSpace::StateType>()->intermediateStates[i]);
-        to->as<NearProjectedStateSpace::StateType>()->intermediateStates.clear();
+      if(dist <= tolerance){
+        for(int i=0;i<intermediateStates.size();i++) freeState(intermediateStates[i]);
+        if (geodesic != nullptr) {
+          intermediateStates.resize(1);
+          intermediateStates[0] = cloneState(from);
+        }else{
+          intermediateStates = path;
+        }
+        return true;
       }else{
-        for(int i=0;i<to->as<NearProjectedStateSpace::StateType>()->intermediateStates.size();i++) freeState(to->as<NearProjectedStateSpace::StateType>()->intermediateStates[i]);
-        to->as<NearProjectedStateSpace::StateType>()->intermediateStates = path;
+        for(int i=0;i<path.size();i++) freeState(path[i]);
+        return false;
       }
     }
-
-    return dist <= tolerance;
   }
 
 };
