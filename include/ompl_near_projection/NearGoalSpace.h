@@ -13,6 +13,8 @@ namespace ompl_near_projection{
     {
     }
 
+    double distanceGoal(const ompl::base::State *st) const override;
+
     // goal spaceのconstraintは、「まずambientSpaceを満たす. 残りの自由度でGoalSpaceを満たす」というものである必要がある.
     // sourceはambientSpaceを満たしている必要がある.
     // sourceから、ambientSpaceを満たす範囲で可能な限りGoalSpaceに近づくようにprojectionし、結果をstateとして返す.

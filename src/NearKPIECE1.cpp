@@ -114,8 +114,7 @@ namespace ompl_near_projection {
           motion->parent = existing;
 
           projectionEvaluator_->computeCoordinates(motion->state, xcoord);
-          disc_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no
-          // call to updateCell() is needed
+          disc_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
 
           if (solv)
             {

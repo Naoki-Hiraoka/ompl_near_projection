@@ -24,7 +24,6 @@ namespace ompl_near_projection {
 
       while (sol->solution == nullptr && !ptc)
         {
-          discLock_.lock();
           /*
             addMotion時:
                 cell->data->score = (1.0 + log((double)(iteration_))) / (1.0 + dist);
@@ -32,12 +31,14 @@ namespace ompl_near_projection {
                 cell->data->importance = cd.score / ((cell->neighbors + 1) * cd.coverage * cd.selections)
             ここでは、iteration = 1, score = 1で固定で運用している
            */
+          discLock_.lock();
           //disc_.countIteration();
 
           /* Decide on a state to expand from */
           Motion *existing = nullptr;
           ompl::geometric::Discretization<Motion>::Cell *ecell = nullptr;
           disc_.selectMotion(existing, ecell);
+          disc_.updateCell(ecell); // ここで、selectした回数によって各cellのimpotanceを更新する. この直後に他のthreadがselectMotionしたときにはすでに反映されているように
           discLock_.unlock();
           assert(existing);
 
@@ -61,8 +62,7 @@ namespace ompl_near_projection {
 
           projectionEvaluator_->computeCoordinates(motion->state, xcoord);
           discLock_.lock();
-          disc_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no
-          // call to updateCell() is needed
+          disc_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
           discLock_.unlock();
 
           if (solv)
@@ -73,9 +73,6 @@ namespace ompl_near_projection {
               sol->lock.unlock();
               break;
             }
-          discLock_.lock();
-          disc_.updateCell(ecell);
-          discLock_.unlock();
         }
 
       si_->freeState(xstate);
