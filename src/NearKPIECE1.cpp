@@ -40,8 +40,11 @@ namespace ompl_near_projection {
     ompl::base::PlannerStatus NearKPIECE1::solve(const ompl::base::PlannerTerminationCondition &ptc) {
       checkValidity();
       ompl::base::Goal *goal = pdef_->getGoal().get();
-      auto *goal_s = dynamic_cast<ompl::base::GoalSampleableRegion *>(goal);
-      auto *goal_s_near = dynamic_cast<NearGoalSpace *>(goal_s); // ここがKPIECE1と異なる.
+      auto *goal_s_near = dynamic_cast<NearGoalSpace *>(goal); // ここがKPIECE1と異なる.
+      if (!goal_s_near) {
+        OMPL_ERROR("%s: Goal is not NearGoalSpace!", getName().c_str());
+        return ompl::base::PlannerStatus::CRASH;
+      }
 
       ompl::geometric::Discretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
 
@@ -62,6 +65,10 @@ namespace ompl_near_projection {
       if (!sampler_)
         sampler_ = si_->allocStateSampler();
       std::shared_ptr<NearProjectedStateSampler> sampler_near = std::dynamic_pointer_cast<NearProjectedStateSampler>(sampler_); // ここがKPIECE1と異なる
+      if (!sampler_near) {
+        OMPL_ERROR("%s: Sampler is not <NearProjectedStateSampler!", getName().c_str());
+        return ompl::base::PlannerStatus::CRASH;
+      }
 
       OMPL_INFORM("%s: Starting planning with %u states already in datastructure", getName().c_str(),
                   disc_.getMotionCount());
@@ -73,7 +80,14 @@ namespace ompl_near_projection {
 
       while (!ptc)
         {
-          disc_.countIteration();
+          /*
+            addMotion時:
+                cell->data->score = (1.0 + log((double)(iteration_))) / (1.0 + dist);
+            updateCell時:
+                cell->data->importance = cd.score / ((cell->neighbors + 1) * cd.coverage * cd.selections)
+            ここでは、iteration = 1, score = 1で固定で運用している
+           */
+          //disc_.countIteration();
 
           /* Decide on a state to expand from */
           Motion *existing = nullptr;
@@ -81,73 +95,37 @@ namespace ompl_near_projection {
           disc_.selectMotion(existing, ecell);
           assert(existing);
 
-          bool keep = false;
+          bool solv = false;
 
           /* sample random state (with goal biasing) */
-          if ((goal_s != nullptr) && rng_.uniform01() < goalBias_ && goal_s->canSample()) {
-            if (goal_s_near != nullptr) {
-              // この部分がKPIECE1と異なる
-              goal_s_near->sampleTo(xstate, existing->state);
-              keep = true; // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
-            } else {
-              goal_s->sampleGoal(xstate);
-              std::pair<ompl::base::State *, double> fail(xstate, 0.0);
-              keep = si_->checkMotion(existing->state, xstate, fail);
-              if (!keep && fail.second > minValidPathFraction_)
-                keep = true;
-            }
+          if (rng_.uniform01() < goalBias_) {
+            // この部分がKPIECE1と異なる
+            solv = goal_s_near->sampleTo(xstate, existing->state); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
           } else {
-            if(sampler_near) {
-              // この部分がKPIECE1と異なる
-              sampler_near->sampleUniformNearValid(xstate, existing->state, maxDistance_);
-              keep = true; // sampleUniformNearValidの出力へのmotionが存在する前提. checkMotionを省略することで高速化
-            } else {
-              sampler_->sampleUniformNear(xstate, existing->state, maxDistance_);
-              std::pair<ompl::base::State *, double> fail(xstate, 0.0);
-              keep = si_->checkMotion(existing->state, xstate, fail);
-              if (!keep && fail.second > minValidPathFraction_)
-                keep = true;
-            }
+            // この部分がKPIECE1と異なる
+            sampler_near->sampleUniformNearValid(xstate, existing->state, maxDistance_); // sampleUniformNearValidの出力へのmotionが存在する前提. checkMotionを省略することで高速化
           }
 
-          if (keep)
+          /* create a motion */
+          auto *motion = new Motion(si_);
+          si_->copyState(motion->state, xstate);
+          motion->parent = existing;
+
+          projectionEvaluator_->computeCoordinates(motion->state, xcoord);
+          disc_.addMotion(motion, xcoord);  // this will also update the discretization heaps as needed, so no
+          // call to updateCell() is needed
+
+          if (solv)
             {
-              /* create a motion */
-              auto *motion = new Motion(si_);
-              si_->copyState(motion->state, xstate);
-              motion->parent = existing;
-
-              double dist = 0.0;
-              bool solv = goal->isSatisfied(motion->state, &dist);
-              projectionEvaluator_->computeCoordinates(motion->state, xcoord);
-              disc_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no
-              // call to updateCell() is needed
-
-              if (solv)
-                {
-                  approxdif = dist;
-                  solution = motion;
-                  break;
-                }
-              if (dist < approxdif)
-                {
-                  approxdif = dist;
-                  approxsol = motion;
-                }
+              approxdif = 0.0;
+              solution = motion;
+              break;
             }
-          else
-            ecell->data->score *= failedExpansionScoreFactor_;
           disc_.updateCell(ecell);
         }
 
       bool solved = false;
       bool approximate = false;
-      if (solution == nullptr)
-        {
-          solution = approxsol;
-          approximate = true;
-        }
-
       if (solution != nullptr)
         {
           lastGoalMotion_ = solution;
