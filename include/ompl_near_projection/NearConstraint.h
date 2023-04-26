@@ -18,7 +18,8 @@ namespace ompl_near_projection{
     // nearがconstraintを満たしている場合、返り値のstateも必ずconstraintを満たす. また、constaintを満たしつつnearと返り値のstateを結ぶmotionが必ず存在する.
     // constraintが「まずconstraint1を満たす. 残りの自由度でconstraint2を満たす」というもので、nearがconstraint1を満たしている場合、返り値のstateも必ずconstraint1を満たす. また、constraint1を満たしつつnearと返り値のstateを結ぶmotionが必ず存在する
     // projectionに失敗しても、stateはprojection後の値が入る. 返り値はfalseになる.
-    virtual bool projectNearValid(ompl::base::State *state, const ompl::base::State *near) const = 0;
+    // distanceには、返り値のstateのconstraintまでの距離が入る
+    virtual bool projectNearValid(ompl::base::State *state, const ompl::base::State *near, double* distance = nullptr) const = 0;
 
     const ompl::base::StateSpace* getStateSpace() const { return stateSpace_; }
     void setStateSpace(ompl::base::StateSpace* stateSpace) { stateSpace_ = stateSpace; }

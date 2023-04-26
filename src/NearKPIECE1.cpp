@@ -96,14 +96,16 @@ namespace ompl_near_projection {
           assert(existing);
 
           bool solv = false;
+          double dist = 0.0;
 
           /* sample random state (with goal biasing) */
           if (rng_.uniform01() < goalBias_) {
             // この部分がKPIECE1と異なる
-            solv = goal_s_near->sampleTo(xstate, existing->state); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
+            solv = goal_s_near->sampleTo(xstate, existing->state, &dist); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
           } else {
             // この部分がKPIECE1と異なる
             sampler_near->sampleUniformNearValid(xstate, existing->state, maxDistance_); // sampleUniformNearValidの出力へのmotionが存在する前提. checkMotionを省略することで高速化
+            dist = goal_s_near->distanceGoal(xstate);
           }
 
           /* create a motion */
@@ -112,12 +114,12 @@ namespace ompl_near_projection {
           motion->parent = existing;
 
           projectionEvaluator_->computeCoordinates(motion->state, xcoord);
-          disc_.addMotion(motion, xcoord);  // this will also update the discretization heaps as needed, so no
+          disc_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no
           // call to updateCell() is needed
 
           if (solv)
             {
-              approxdif = 0.0;
+              approxdif = dist;
               solution = motion;
               break;
             }

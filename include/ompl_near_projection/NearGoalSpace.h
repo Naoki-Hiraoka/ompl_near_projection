@@ -18,7 +18,8 @@ namespace ompl_near_projection{
     // sourceから、ambientSpaceを満たす範囲で可能な限りGoalSpaceに近づくようにprojectionし、結果をstateとして返す.
     // goalSpaceに到達しなくても、途中のstateをstateとして返す. 返り値はfalseになる.
     // 返り値のstateは、sourceからstateへの、ambientSpaceを満たすmotionが必ず存在するという保証がある
-    virtual bool sampleTo(ompl::base::State *state, const ompl::base::State *source) const;
+    // distanceには、返り値のstateのgoalまでの距離が入る
+    virtual bool sampleTo(ompl::base::State *state, const ompl::base::State *source, double* distance = nullptr) const;
 
   };
 };
