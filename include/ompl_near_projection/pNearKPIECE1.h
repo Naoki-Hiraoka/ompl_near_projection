@@ -2,14 +2,17 @@
 #define OMPL_NEAR_PROJECTION_PNEARKPIECE1_H
 
 #include <ompl/geometric/planners/kpiece/KPIECE1.h>
+#include <ompl_near_projection/NearKPIECE1.h>
 #include <thread>
 #include <mutex>
 
 namespace ompl_near_projection {
   namespace geometric {
-    class pNearKPIECE1 : public ompl::geometric::KPIECE1 {
+    class pNearKPIECE1 : public NearKPIECE1 {
     public:
-      pNearKPIECE1(const ompl::base::SpaceInformationPtr &si) : KPIECE1(si) {}
+      pNearKPIECE1(const ompl::base::SpaceInformationPtr &si) :
+        NearKPIECE1(si)
+      {}
 
       ompl::base::PlannerStatus solve(const ompl::base::PlannerTerminationCondition &ptc) override;
 
@@ -21,6 +24,7 @@ namespace ompl_near_projection {
       unsigned int getThreadCount() const {
         return threadCount_;
       }
+
     protected:
       struct SolutionInfo
       {

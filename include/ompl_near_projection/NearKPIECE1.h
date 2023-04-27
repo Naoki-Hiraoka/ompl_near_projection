@@ -36,14 +36,42 @@
 #define OMPL_NEAR_PROJECTION_NEARKPIECE1_H
 
 #include <ompl/geometric/planners/kpiece/KPIECE1.h>
+#include <ompl_near_projection/NearDiscretization.h>
 
 namespace ompl_near_projection {
   namespace geometric {
     class NearKPIECE1 : public ompl::geometric::KPIECE1 {
     public:
-      NearKPIECE1(const ompl::base::SpaceInformationPtr &si) : KPIECE1(si) {}
+      NearKPIECE1(const ompl::base::SpaceInformationPtr &si) :
+        KPIECE1(si),
+        disc2_([this](Motion *m) { freeMotion(m); })
+      {}
 
       ompl::base::PlannerStatus solve(const ompl::base::PlannerTerminationCondition &ptc) override;
+
+      void setBorderFraction(double bp)
+      {
+        disc2_.setBorderFraction(bp);
+      }
+      double getBorderFraction() const
+      {
+        return disc2_.getBorderFraction();
+      }
+      void setup() override{
+        KPIECE1::setup();
+        disc2_.setDimension(projectionEvaluator_->getDimension());
+      }
+      void clear() override{
+        KPIECE1::clear();
+        disc2_.clear();
+      }
+      void getPlannerData(ompl::base::PlannerData &data) const override{
+        Planner::getPlannerData(data);
+        disc2_.getPlannerData(data, 0, true, lastGoalMotion_);
+      }
+
+    protected:
+      NearDiscretization<Motion> disc2_; // デフォルトのものだと、複数スレッド並列で実行した場合に、複数スレッドが近くのcellにmotionを生成した場合に、それらのcellを過剰に忌避してしまう問題があった.
     };
   }
 };

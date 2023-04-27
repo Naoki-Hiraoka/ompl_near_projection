@@ -46,17 +46,17 @@ namespace ompl_near_projection {
         return ompl::base::PlannerStatus::CRASH;
       }
 
-      ompl::geometric::Discretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
+      NearDiscretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
 
       while (const ompl::base::State *st = pis_.nextStart())
         {
           auto *motion = new Motion(si_);
           si_->copyState(motion->state, st);
           projectionEvaluator_->computeCoordinates(motion->state, xcoord);
-          disc_.addMotion(motion, xcoord, 1.0);
+          disc2_.addMotion(motion, xcoord, 1.0);
         }
 
-      if (disc_.getMotionCount() == 0)
+      if (disc2_.getMotionCount() == 0)
         {
           OMPL_ERROR("%s: There are no valid initial states!", getName().c_str());
           return ompl::base::PlannerStatus::INVALID_START;
@@ -71,7 +71,7 @@ namespace ompl_near_projection {
       }
 
       OMPL_INFORM("%s: Starting planning with %u states already in datastructure", getName().c_str(),
-                  disc_.getMotionCount());
+                  disc2_.getMotionCount());
 
       Motion *solution = nullptr;
       Motion *approxsol = nullptr;
@@ -87,12 +87,12 @@ namespace ompl_near_projection {
                 cell->data->importance = cd.score / ((cell->neighbors + 1) * cd.coverage * cd.selections)
             ここでは、iteration = 1, score = 1で固定で運用している
            */
-          //disc_.countIteration();
+          //disc2_.countIteration();
 
           /* Decide on a state to expand from */
           Motion *existing = nullptr;
-          ompl::geometric::Discretization<Motion>::Cell *ecell = nullptr;
-          disc_.selectMotion(existing, ecell);
+          NearDiscretization<Motion>::Cell *ecell = nullptr;
+          disc2_.selectMotion(existing, ecell);
           assert(existing);
 
           sampler_near->sampleUniformNearValid(xstate, existing->state, maxDistance_); // sampleUniformNearValidの出力へのmotionが存在する前提. checkMotionを省略することで高速化
@@ -102,7 +102,7 @@ namespace ompl_near_projection {
           si_->copyState(motion->state, xstate);
           motion->parent = existing;
           projectionEvaluator_->computeCoordinates(motion->state, xcoord);
-          disc_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
+          disc2_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
 
           existing = motion;
           bool solv = goal_s_near->sampleTo(xstate, existing->state, &dist); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
@@ -111,14 +111,14 @@ namespace ompl_near_projection {
           si_->copyState(motion2->state, xstate);
           motion2->parent = existing;
           projectionEvaluator_->computeCoordinates(motion2->state, xcoord);
-          disc_.addMotion(motion2, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
+          disc2_.addMotion(motion2, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
           if (solv)
             {
               approxdif = dist;
               solution = motion2;
               break;
             }
-          disc_.updateCell(ecell);
+          disc2_.updateCell(ecell);
         }
 
       bool solved = false;
@@ -146,8 +146,8 @@ namespace ompl_near_projection {
       si_->freeState(xstate);
 
       OMPL_INFORM("%s: Created %u states in %u cells (%u internal + %u external)", getName().c_str(),
-                  disc_.getMotionCount(), disc_.getCellCount(), disc_.getGrid().countInternal(),
-                  disc_.getGrid().countExternal());
+                  disc2_.getMotionCount(), disc2_.getCellCount(), disc2_.getGrid().countInternal(),
+                  disc2_.getGrid().countExternal());
 
       return {solved, approximate};
     }

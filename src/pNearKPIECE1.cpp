@@ -36,9 +36,9 @@ namespace ompl_near_projection {
 
           /* Decide on a state to expand from */
           Motion *existing = nullptr;
-          ompl::geometric::Discretization<Motion>::Cell *ecell = nullptr;
-          disc_.selectMotion(existing, ecell);
-          disc_.updateCell(ecell); // ここで、selectした回数によって各cellのimpotanceを更新する. この直後に他のthreadがselectMotionしたときにはすでに反映されているように
+          NearDiscretization<Motion>::Cell *ecell = nullptr;
+          disc2_.selectMotion(existing, ecell);
+          disc2_.updateCell(ecell); // ここで、selectした回数によって各cellのimpotanceを更新する. この直後に他のthreadがselectMotionしたときにはすでに反映されているように
           discLock_.unlock();
           assert(existing);
 
@@ -50,7 +50,7 @@ namespace ompl_near_projection {
           motion->parent = existing;
           projectionEvaluator_->computeCoordinates(motion->state, xcoord);
           discLock_.lock();
-          disc_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
+          disc2_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
           discLock_.unlock();
 
           existing = motion;
@@ -61,7 +61,7 @@ namespace ompl_near_projection {
           motion2->parent = existing;
           projectionEvaluator_->computeCoordinates(motion2->state, xcoord);
           discLock_.lock();
-          disc_.addMotion(motion2, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
+          disc2_.addMotion(motion2, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
           discLock_.unlock();
           if (solv)
             {
@@ -79,17 +79,17 @@ namespace ompl_near_projection {
     ompl::base::PlannerStatus pNearKPIECE1::solve(const ompl::base::PlannerTerminationCondition &ptc) {
       checkValidity();
 
-      ompl::geometric::Discretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
+      NearDiscretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
 
       while (const ompl::base::State *st = pis_.nextStart())
         {
           auto *motion = new Motion(si_);
           si_->copyState(motion->state, st);
           projectionEvaluator_->computeCoordinates(motion->state, xcoord);
-          disc_.addMotion(motion, xcoord, 1.0);
+          disc2_.addMotion(motion, xcoord, 1.0);
         }
 
-      if (disc_.getMotionCount() == 0)
+      if (disc2_.getMotionCount() == 0)
         {
           OMPL_ERROR("%s: There are no valid initial states!", getName().c_str());
           return ompl::base::PlannerStatus::INVALID_START;
@@ -99,7 +99,7 @@ namespace ompl_near_projection {
         sampler_ = si_->allocStateSampler();
 
       OMPL_INFORM("%s: Starting planning with %u states already in datastructure", getName().c_str(),
-                  disc_.getMotionCount());
+                  disc2_.getMotionCount());
 
       SolutionInfo sol;
       sol.solution = nullptr;
@@ -142,8 +142,8 @@ namespace ompl_near_projection {
         }
 
       OMPL_INFORM("%s: Created %u states in %u cells (%u internal + %u external)", getName().c_str(),
-                  disc_.getMotionCount(), disc_.getCellCount(), disc_.getGrid().countInternal(),
-                  disc_.getGrid().countExternal());
+                  disc2_.getMotionCount(), disc2_.getCellCount(), disc2_.getGrid().countInternal(),
+                  disc2_.getGrid().countExternal());
 
       return {solved, approximate};
     }
