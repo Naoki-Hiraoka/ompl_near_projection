@@ -328,7 +328,7 @@ namespace ompl_near_projection
             {
                 CellData &cd = *(cell->data);
                 //cd.importance = cd.score / ((cell->neighbors + 1) * cd.coverage * cd.selections);
-                cd.importance = cd.score / (cd.selections); // ここがDiscritizationと異なる.  // デフォルトのものだと、複数スレッド並列で実行した場合に、複数スレッドが近くのcellにmotionを生成した場合に、それらのcellを過剰に忌避してしまう問題があった.
+                cd.importance = cd.score / ((cell->neighbors + 1) * cd.selections); // ここがDiscritizationと異なる.  // デフォルトのものだと、複数スレッド並列で実行した場合に、複数スレッドが近くのcellにmotionを生成した場合に、それらのcellを過剰に忌避してしまう問題があった.
             }
 
             /** \brief A grid containing motions, imposed on a
