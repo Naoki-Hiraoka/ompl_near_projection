@@ -95,31 +95,27 @@ namespace ompl_near_projection {
           disc_.selectMotion(existing, ecell);
           assert(existing);
 
-          bool solv = false;
-          double dist = 0.0;
-
-          /* sample random state (with goal biasing) */
-          if (rng_.uniform01() < goalBias_) {
-            // この部分がKPIECE1と異なる
-            solv = goal_s_near->sampleTo(xstate, existing->state, &dist); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
-          } else {
-            // この部分がKPIECE1と異なる
-            sampler_near->sampleUniformNearValid(xstate, existing->state, maxDistance_); // sampleUniformNearValidの出力へのmotionが存在する前提. checkMotionを省略することで高速化
-            dist = goal_s_near->distanceGoal(xstate);
-          }
-
+          sampler_near->sampleUniformNearValid(xstate, existing->state, maxDistance_); // sampleUniformNearValidの出力へのmotionが存在する前提. checkMotionを省略することで高速化
+          double dist = goal_s_near->distanceGoal(xstate);
           /* create a motion */
           auto *motion = new Motion(si_);
           si_->copyState(motion->state, xstate);
           motion->parent = existing;
-
           projectionEvaluator_->computeCoordinates(motion->state, xcoord);
           disc_.addMotion(motion, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
 
+          existing = motion;
+          bool solv = goal_s_near->sampleTo(xstate, existing->state, &dist); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
+          /* create a motion */
+          auto *motion2 = new Motion(si_);
+          si_->copyState(motion2->state, xstate);
+          motion2->parent = existing;
+          projectionEvaluator_->computeCoordinates(motion2->state, xcoord);
+          disc_.addMotion(motion2, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
           if (solv)
             {
               approxdif = dist;
-              solution = motion;
+              solution = motion2;
               break;
             }
           disc_.updateCell(ecell);
