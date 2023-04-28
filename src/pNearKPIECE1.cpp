@@ -22,6 +22,11 @@ namespace ompl_near_projection {
 
       ompl::base::State *xstate = si_->allocState();
 
+      while(sol->solution == nullptr && !ptc) {
+        if(disc2_.getMotionCount() < tid + 1) usleep(sleepUs_); // これがないと、start state近くの点を過剰にsamplingしてしまってtree全体が歪む
+        else break;
+      }
+
       while (sol->solution == nullptr && !ptc)
         {
           /*

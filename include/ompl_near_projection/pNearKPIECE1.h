@@ -25,6 +25,13 @@ namespace ompl_near_projection {
         return threadCount_;
       }
 
+      void setSleepUs(unsigned int us) {
+        sleepUs_ = us;
+      }
+      unsigned int getSleepUs() {
+        return sleepUs_;
+      }
+
     protected:
       struct SolutionInfo
       {
@@ -38,6 +45,7 @@ namespace ompl_near_projection {
 
       std::mutex discLock_;
       unsigned int threadCount_ = 2;
+      unsigned int sleepUs_ = 10 * 1000;
     };
   }
 };
