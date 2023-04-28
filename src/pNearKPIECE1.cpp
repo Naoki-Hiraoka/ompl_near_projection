@@ -1,16 +1,26 @@
 #include <ompl_near_projection/pNearKPIECE1.h>
 #include <ompl_near_projection/NearGoalSpace.h>
+#include <ompl_near_projection/NearProblemDefinition.h>
 
 namespace ompl_near_projection {
   namespace geometric {
     void pNearKPIECE1::threadSolve(unsigned int tid, const ompl::base::PlannerTerminationCondition &ptc,
                                    SolutionInfo *sol) {
-      ompl::base::Goal *goal = pdef_->getGoal().get();
-      auto *goal_s_near = dynamic_cast<NearGoalSpace *>(goal); // ここがKPIECE1と異なる.
-      if (!goal_s_near) {
-        OMPL_ERROR("%s: Goal is not NearGoalSpace!", getName().c_str());
+      NearProblemDefinitionPtr pdef_near_ = std::dynamic_pointer_cast<NearProblemDefinition>(pdef_);
+      if(!pdef_near_){
+        OMPL_ERROR("%s: pdef is not NearProblemDefinition!", getName().c_str());
         return;
       }
+
+      if(pdef_near_->getGoals().size()==0){
+        NearGoalSpacePtr goal = std::dynamic_pointer_cast<NearGoalSpace>(pdef_near_->getGoal());
+        if (!goal) {
+          OMPL_ERROR("%s: Goal is not NearGoalSpace!", getName().c_str());
+          return;
+        }
+        pdef_near_->setGoals(std::vector<NearGoalSpacePtr>{goal});
+      }
+      const std::vector<NearGoalSpacePtr>& goals = pdef_near_->getGoals();
 
       ompl::geometric::Discretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
 
@@ -48,7 +58,7 @@ namespace ompl_near_projection {
           assert(existing);
 
           sampler_near->sampleUniformNearValid(xstate, existing->state, maxDistance_); // sampleUniformNearValidの出力へのmotionが存在する前提. checkMotionを省略することで高速化
-          double dist = goal_s_near->distanceGoal(xstate);
+          double dist = (goals.size()==1) ? goals[0]->distanceGoal(xstate) : 0.0;
           /* create a motion */
           auto *motion = new Motion(si_);
           si_->copyState(motion->state, xstate);
@@ -59,23 +69,41 @@ namespace ompl_near_projection {
           discLock_.unlock();
 
           existing = motion;
-          bool solv = goal_s_near->sampleTo(xstate, existing->state, &dist); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
+
+          bool has_unsolved = false;
+          for(int i=0;i<goals.size();i++){
+            if(pdef_near_->getSolutionPathForAGoal(i) != nullptr) continue;
+            else has_unsolved = true;
+
+            bool solv = goals[i]->sampleTo(xstate, existing->state, &dist); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
           /* create a motion */
-          auto *motion2 = new Motion(si_);
-          si_->copyState(motion2->state, xstate);
-          motion2->parent = existing;
-          projectionEvaluator_->computeCoordinates(motion2->state, xcoord);
-          discLock_.lock();
-          disc2_.addMotion(motion2, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
-          discLock_.unlock();
-          if (solv)
-            {
-              sol->lock.lock();
-              sol->approxdif = dist;
-              sol->solution = motion2;
-              sol->lock.unlock();
-              break;
-            }
+            auto *motion2 = new Motion(si_);
+            si_->copyState(motion2->state, xstate);
+            motion2->parent = existing;
+            projectionEvaluator_->computeCoordinates(motion2->state, xcoord);
+            discLock_.lock();
+            disc2_.addMotion(motion2, xcoord, dist);  // this will also update the discretization heaps as needed, so no call to updateCell() is needed
+            discLock_.unlock();
+            if (solv)
+              {
+                /* construct the solution path */
+                std::vector<Motion *> mpath;
+                while (motion2 != nullptr)
+                  {
+                    mpath.push_back(motion2);
+                    motion2 = motion2->parent;
+                  }
+                /* set the solution path */
+                auto path(std::make_shared<ompl::geometric::PathGeometric>(si_));
+                for (int i = mpath.size() - 1; i >= 0; --i)
+                  path->append(mpath[i]->state);
+                sol->lock.lock();
+                pdef_near_->addSolutionPathForAGoal(i, path, false, dist, getName());
+                sol->lock.unlock();
+                break;
+              }
+          }
+          if(!has_unsolved) sol->solution = motion;
         }
 
       si_->freeState(xstate);
@@ -83,6 +111,21 @@ namespace ompl_near_projection {
 
     ompl::base::PlannerStatus pNearKPIECE1::solve(const ompl::base::PlannerTerminationCondition &ptc) {
       checkValidity();
+
+      NearProblemDefinitionPtr pdef_near_ = std::dynamic_pointer_cast<NearProblemDefinition>(pdef_);
+      if(!pdef_near_){
+        OMPL_ERROR("%s: pdef is not NearProblemDefinition!", getName().c_str());
+        return ompl::base::PlannerStatus::CRASH;
+      }
+
+      if(pdef_near_->getGoals().size()==0){
+        NearGoalSpacePtr goal = std::dynamic_pointer_cast<NearGoalSpace>(pdef_near_->getGoal());
+        if (!goal) {
+          OMPL_ERROR("%s: Goal is not NearGoalSpace!", getName().c_str());
+          return ompl::base::PlannerStatus::CRASH;
+        }
+        pdef_near_->setGoals(std::vector<NearGoalSpacePtr>{goal});
+      }
 
       NearDiscretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
 
@@ -124,33 +167,15 @@ namespace ompl_near_projection {
         }
 
       bool solved = false;
-      bool approximate = false;
-      if (sol.solution != nullptr)
-        {
-          lastGoalMotion_ = sol.solution;
-
-          /* construct the solution path */
-          std::vector<Motion *> mpath;
-          while (sol.solution != nullptr)
-            {
-              mpath.push_back(sol.solution);
-              sol.solution = sol.solution->parent;
-            }
-
-          /* set the solution path */
-          auto path(std::make_shared<ompl::geometric::PathGeometric>(si_));
-          for (int i = mpath.size() - 1; i >= 0; --i)
-            path->append(mpath[i]->state);
-
-          pdef_->addSolutionPath(path, approximate, sol.approxdif, getName());
-          solved = true;
-        }
+      if (sol.solution != nullptr) {
+        solved = true;
+      }
 
       OMPL_INFORM("%s: Created %u states in %u cells (%u internal + %u external)", getName().c_str(),
                   disc2_.getMotionCount(), disc2_.getCellCount(), disc2_.getGrid().countInternal(),
                   disc2_.getGrid().countExternal());
 
-      return {solved, approximate};
+      return {solved, false};
     }
   };
 };

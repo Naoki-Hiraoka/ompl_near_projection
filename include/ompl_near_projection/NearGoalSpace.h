@@ -5,6 +5,8 @@
 #include <ompl_near_projection/NearProjectedStateSpace.h>
 
 namespace ompl_near_projection{
+  OMPL_CLASS_FORWARD(NearGoalSpace); // *Ptrを定義
+
   class NearGoalSpace : public ompl::base::GoalSpace {
   public:
     // goal spaceは、NearProjectedStateSpaceである必要がある
