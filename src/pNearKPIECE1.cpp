@@ -102,7 +102,9 @@ namespace ompl_near_projection {
                 for (int i = mpath.size() - 1; i >= 0; --i)
                   path->append(mpath[i]->state);
                 sol->lock.lock();
-                pdef_near_->addSolutionPathForAGoal(i, path, false, dist, getName());
+                if(pdef_near_->getSolutionPathForAGoal(i) == nullptr) { // goalが1つだけの場合に、solutionpathが1つ(だけ)生成されるようにすることで、getSolutionPath()と、getSolutionPathForAGoal(i)を一致させる.
+                  pdef_near_->addSolutionPathForAGoal(i, path, false, dist, getName());
+                }
                 sol->lock.unlock();
                 break;
               }
