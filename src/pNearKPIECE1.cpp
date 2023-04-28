@@ -72,6 +72,10 @@ namespace ompl_near_projection {
 
           bool has_unsolved = false;
           for(int i=0;i<goals.size();i++){
+            if(sol->solution != nullptr || ptc){
+              has_unsolved = true;
+              break;
+            }
             if(pdef_near_->getSolutionPathForAGoal(i) != nullptr) continue;
             else has_unsolved = true;
 
