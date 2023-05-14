@@ -29,9 +29,12 @@ namespace ompl_near_projection {
     // 内部でclearSolutionPathsも呼ぶ
     void clearSolutionPathsForAllGoals();
 
+    void setFindAllGoals(bool findAllGoals) { findAllGoals_ = findAllGoals; }
+    bool getFindAllGoals() { return findAllGoals_; }
   protected:
     std::vector<NearGoalSpacePtr> goals_;
     std::vector<ompl::base::PathPtr> solutionsForEachGoal_;
+    bool findAllGoals_ = false;
   };
 
 };

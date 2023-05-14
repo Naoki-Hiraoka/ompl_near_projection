@@ -106,6 +106,7 @@ namespace ompl_near_projection {
                   pdef_near_->addSolutionPathForAGoal(i, path, false, dist, getName());
                 }
                 sol->lock.unlock();
+                if(!pdef_near_->getFindAllGoals()) sol->solution = motion;
                 break;
               }
           }

@@ -144,6 +144,10 @@ namespace ompl_near_projection {
                 for (int i = mpath.size() - 1; i >= 0; --i)
                   path->append(mpath[i]->state);
                 pdef_near_->addSolutionPathForAGoal(i, path, false, dist, getName());
+                if(!pdef_near_->getFindAllGoals()) {
+                  has_unsolved = false;
+                  break;
+                }
               }
             disc2_.updateCell(ecell);
           }
