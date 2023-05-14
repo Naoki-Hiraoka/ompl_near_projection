@@ -154,9 +154,17 @@ namespace ompl_near_projection {
           if(!has_unsolved) break;
         }
 
-      bool solved = true;
-      for(int i=0;i<goals.size();i++){
-        if(pdef_near_->getSolutionPathForAGoal(i) == nullptr) solved = false;
+      bool solved;
+      if(pdef_near_->getFindAllGoals()) {
+        solved = true;
+        for(int i=0;i<goals.size();i++){
+          if(pdef_near_->getSolutionPathForAGoal(i) == nullptr) solved = false;
+        }
+      }else{
+        solved = false;
+        for(int i=0;i<goals.size();i++){
+          if(pdef_near_->getSolutionPathForAGoal(i) != nullptr) solved = true;
+        }
       }
 
       si_->freeState(xstate);
