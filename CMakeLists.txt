@@ -32,6 +32,7 @@ add_library(${PROJECT_NAME}
   src/NearKPIECE1.cpp
   src/NearEST.cpp
   src/pNearKPIECE1.cpp
+  src/NearRRTConnect.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
