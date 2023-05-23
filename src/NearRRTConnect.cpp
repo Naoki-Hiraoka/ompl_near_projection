@@ -1,5 +1,7 @@
 #include <ompl_near_projection/NearRRTConnect.h>
 #include <ompl/base/goals/GoalSampleableRegion.h>
+#include <ompl_near_projection/NearGoalSpace.h>
+#include <ompl_near_projection/NearProblemDefinition.h>
 
 namespace ompl_near_projection {
   namespace geometric {
@@ -35,6 +37,11 @@ namespace ompl_near_projection {
 
       if (!sampler_)
         sampler_ = si_->allocStateSampler();
+      std::shared_ptr<NearProjectedStateSampler> sampler_near = std::dynamic_pointer_cast<NearProjectedStateSampler>(sampler_); // ここがKPIECE1と異なる
+      if (!sampler_near) {
+        OMPL_ERROR("%s: Sampler is not NearProjectedStateSampler!", getName().c_str());
+        return ompl::base::PlannerStatus::CRASH;
+      }
 
       OMPL_INFORM("%s: Starting planning with %d states already in datastructure", getName().c_str(),
                   (int)(tStart_->size() + tGoal_->size()));
@@ -74,7 +81,7 @@ namespace ompl_near_projection {
             }
 
           /* sample random state */
-          sampler_->sampleUniform(rstate);
+          sampler_near->sampleUniformRaw(rstate);
 
           GrowState gs = growTreeNear(tree, tgi, rmotion);
 
@@ -85,9 +92,7 @@ namespace ompl_near_projection {
 
               /* attempt to connect trees */
 
-              /* if reached, it means we used rstate directly, no need to copy again */
-              if (gs != REACHED)
-                si_->copyState(rstate, tgi.xstate);
+              si_->copyState(rstate, tgi.xstate);
 
               tgi.start = startTree_;
 
@@ -113,14 +118,6 @@ namespace ompl_near_projection {
               /* if we connected the trees in a valid way (start and goal pair is valid)*/
               if (gsc == REACHED && goal->isStartGoalPairValid(startMotion->root, goalMotion->root))
                 {
-                  // it must be the case that either the start tree or the goal tree has made some progress
-                  // so one of the parents is not nullptr. We go one step 'back' to avoid having a duplicate state
-                  // on the solution path
-                  if (startMotion->parent != nullptr)
-                    startMotion = startMotion->parent;
-                  else
-                    goalMotion = goalMotion->parent;
-
                   connectionPoint_ = std::make_pair(startMotion->state, goalMotion->state);
 
                   /* construct the solution path */
@@ -199,6 +196,13 @@ namespace ompl_near_projection {
 
     ompl::geometric::RRTConnect::GrowState NearRRTConnect::growTreeNear(TreeData &tree, TreeGrowingInfo &tgi,
                                                                         Motion *rmotion) {
+
+      NearProjectedStateSpacePtr spaceNear = std::dynamic_pointer_cast<NearProjectedStateSpace>(si_->getStateSpace());
+      if(!spaceNear){
+        OMPL_ERROR("%s: Sapace is not NearProjectedStateSpace!", getName().c_str());
+        return TRAPPED;
+      }
+
       /* find closest state in the tree */
       Motion *nmotion = tree->nearest(rmotion);
 
@@ -206,27 +210,24 @@ namespace ompl_near_projection {
       bool reach = true;
 
       /* find state to add */
-      ompl::base::State *dstate = rmotion->state;
-      double d = si_->distance(nmotion->state, rmotion->state);
+      ompl::base::State *dstate = tgi.xstate;
+      si_->copyState(dstate, rmotion->state);
+      double d = si_->distance(nmotion->state, dstate);
       if (d > maxDistance_)
         {
-          si_->getStateSpace()->interpolate(nmotion->state, rmotion->state, maxDistance_ / d, tgi.xstate);
-
-          /* Check if we have moved at all. Due to some stranger state spaces (e.g., the constrained state spaces),
-           * interpolate can fail and no progress is made. Without this check, the algorithm gets stuck in a loop as it
-           * thinks it is making progress, when none is actually occurring. */
-          if (si_->equalStates(nmotion->state, tgi.xstate))
-            return TRAPPED;
-
-          dstate = tgi.xstate;
-          reach = false;
+          spaceNear->interpolateRaw(nmotion->state, rmotion->state, maxDistance_ / d, dstate);
         }
 
-      bool validMotion = tgi.start ? si_->checkMotion(nmotion->state, dstate) :
-        si_->isValid(dstate) && si_->checkMotion(dstate, nmotion->state);
+      // constraintを満たす範囲で、nmotion->stateを出発点として、可能な限りdstateに近づくように移動して、結果をdstateに入れて返す
+      spaceNear->getNearConstraint()->projectNearValid(dstate, nmotion->state);
 
-      if (!validMotion)
+      if (si_->distance(dstate, rmotion->state) <= spaceNear->getDelta()){
+        reach = true;
+      }
+
+      if(!reach && si_->distance(dstate, nmotion->state) <= spaceNear->getDelta()){
         return TRAPPED;
+      }
 
       if (addIntermediateStates_)
         {

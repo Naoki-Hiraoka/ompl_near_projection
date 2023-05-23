@@ -8,6 +8,12 @@ namespace ompl_near_projection{
   {
   }
 
+  void NearProjectedStateSampler::sampleUniformRaw(ompl::base::State *state)
+  {
+    WrapperStateSampler::sampleUniform(state);
+    space_->enforceBounds(state);
+  }
+
   void NearProjectedStateSampler::sampleUniformNearValid(ompl::base::State *state, const ompl::base::State *near, double distance) {
     WrapperStateSampler::sampleUniformNear(state, near, distance);
     nearConstraint_->projectNearValid(state, near);
@@ -60,6 +66,7 @@ namespace ompl_near_projection{
     auto &&svc = si_->getStateValidityChecker();
 
     std::vector<ompl::base::State*>& intermediateStates = static_cast<const NearProjectedStateSpace::StateType*>(to)->intermediateStates;
+    std::vector<ompl::base::State*>& intermediateStatesInv = static_cast<const NearProjectedStateSpace::StateType*>(from)->intermediateStates;
     std::vector<ompl::base::State *> path{cloneState(from)};
 
     if(intermediateStates.size() > 0 && distance(intermediateStates[0], from) < delta_) {
@@ -82,6 +89,28 @@ namespace ompl_near_projection{
         for(int i=0;i<intermediateStates.size();i++) freeState(intermediateStates[i]);
         intermediateStates.resize(1);
         intermediateStates[0] = cloneState(from);
+        return true;
+      }
+    }else if(intermediateStatesInv.size() > 0 && distance(intermediateStatesInv[0], to) < delta_) {
+      if(geodesic == nullptr){
+        freeState(scratch);
+        freeState(previous);
+        return true;
+      }else{
+        for(int i=intermediateStatesInv.size()-1;i>=1;i++){ // 始点はふくまない
+          copyState(scratch, intermediateStatesInv[i]); // たまにIkの誤差でisValidではないことがあるが、やむなし
+          if(distance(previous, scratch) < delta_) continue;
+          NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
+          tmp_state->intermediateStates.resize(1);
+          tmp_state->intermediateStates[0] = cloneState(previous);
+          geodesic->push_back(tmp_state);
+          copyState(previous, scratch);
+        }
+        freeState(scratch);
+        freeState(previous);
+        for(int i=0;i<intermediateStatesInv.size();i++) freeState(intermediateStatesInv[i]);
+        intermediateStatesInv.resize(1);
+        intermediateStatesInv[0] = cloneState(from);
         return true;
       }
     }else{
@@ -137,5 +166,11 @@ namespace ompl_near_projection{
       }
     }
   }
+
+  void NearProjectedStateSpace::interpolateRaw(const ompl::base::State *from, const ompl::base::State *to, const double t,
+                                               ompl::base::State *state) const{
+    WrapperStateSpace::interpolate(from, to, t, state);
+  }
+
 
 };

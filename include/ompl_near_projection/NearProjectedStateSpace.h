@@ -11,6 +11,9 @@ namespace ompl_near_projection{
   public:
     NearProjectedStateSampler(const NearProjectedStateSpace *space, ompl::base::StateSamplerPtr sampler);
 
+    // constraintを無視して、全状態空間の中からsampleする.
+    void sampleUniformRaw(ompl::base::State *state);
+
     // nearはconstraintを満たしている想定.
     // 返り値のstateは、nearからstateへの、constraintを満たすmotionが必ず存在するという保証がある
     void sampleUniformNearValid(ompl::base::State *state, const ompl::base::State *near, double distance);
@@ -68,6 +71,9 @@ namespace ompl_near_projection{
     // constraint->projectNear(state, near)を使う
     bool discreteGeodesic(const ompl::base::State *from, const ompl::base::State *to, bool interpolate = false,
                           std::vector<ompl::base::State *> *geodesic = nullptr) const override;
+
+    void interpolateRaw(const ompl::base::State *from, const ompl::base::State *to, const double t,
+                        ompl::base::State *state) const;
 
   protected:
     NearConstraintPtr nearConstraint_;
