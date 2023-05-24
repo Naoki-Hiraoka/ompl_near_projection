@@ -86,9 +86,10 @@ namespace ompl_near_projection{
         }
         freeState(scratch);
         freeState(previous);
-        for(int i=0;i<intermediateStates.size();i++) freeState(intermediateStates[i]);
+        freeState(intermediateStates[0]);
+        intermediateStates[0] = intermediateStates.back();
+        for(int i=1;i+1<intermediateStates.size();i++) freeState(intermediateStates[i]);
         intermediateStates.resize(1);
-        intermediateStates[0] = cloneState(from);
         return true;
       }
     }else if(intermediateStatesInv.size() > 0 && distance(intermediateStatesInv[0], to) < delta_) {
@@ -97,7 +98,7 @@ namespace ompl_near_projection{
         freeState(previous);
         return true;
       }else{
-        for(int i=intermediateStatesInv.size()-1;i>=1;i++){ // 始点はふくまない
+        for(int i=intermediateStatesInv.size()-1;i>=1;i--){ // 始点はふくまない
           copyState(scratch, intermediateStatesInv[i]); // たまにIkの誤差でisValidではないことがあるが、やむなし
           if(distance(previous, scratch) < delta_) continue;
           NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
@@ -108,9 +109,10 @@ namespace ompl_near_projection{
         }
         freeState(scratch);
         freeState(previous);
-        for(int i=0;i<intermediateStatesInv.size();i++) freeState(intermediateStatesInv[i]);
+        freeState(intermediateStatesInv[0]);
+        intermediateStatesInv[0] = intermediateStatesInv.back();
+        for(int i=1;i+1<intermediateStatesInv.size();i++) freeState(intermediateStatesInv[i]);
         intermediateStatesInv.resize(1);
-        intermediateStatesInv[0] = cloneState(from);
         return true;
       }
     }else{
