@@ -207,7 +207,7 @@ namespace ompl_near_projection {
       Motion *nmotion = tree->nearest(rmotion);
 
       /* assume we can reach the state we go towards */
-      bool reach = true;
+      bool reach = false;
 
       /* find state to add */
       ompl::base::State *dstate = tgi.xstate;
