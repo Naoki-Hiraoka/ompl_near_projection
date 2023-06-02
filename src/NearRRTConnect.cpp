@@ -1,7 +1,6 @@
 #include <ompl_near_projection/NearRRTConnect.h>
 #include <ompl/base/goals/GoalSampleableRegion.h>
 #include <ompl_near_projection/NearGoalSpace.h>
-#include <ompl_near_projection/NearProblemDefinition.h>
 
 namespace ompl_near_projection {
   namespace geometric {
@@ -58,9 +57,11 @@ namespace ompl_near_projection {
       while (!ptc)
         {
           TreeData &tree = startTree_ ? tStart_ : tGoal_;
+          std::mutex &treeLock = startTree_ ? tStartLock_ : tGoalLock_;
           tgi.start = startTree_;
           startTree_ = !startTree_;
           TreeData &otherTree = startTree_ ? tStart_ : tGoal_;
+          std::mutex &otherTreeLock = startTree_ ? tStartLock_ : tGoalLock_;
 
           if (tGoal_->size() == 0 || pis_.getSampledGoalsCount() < tGoal_->size() / 2)
             {
@@ -83,7 +84,7 @@ namespace ompl_near_projection {
           /* sample random state */
           sampler_near->sampleUniformRaw(rstate);
 
-          GrowState gs = growTreeNear(tree, tgi, rmotion);
+          GrowState gs = growTreeNear(tree, tgi, rmotion, treeLock);
 
           if (gs != TRAPPED)
             {
@@ -97,12 +98,12 @@ namespace ompl_near_projection {
               tgi.start = startTree_;
 
               /* if initial progress cannot be done from the otherTree, restore tgi.start */
-              GrowState gsc = growTreeNear(otherTree, tgi, rmotion);
+              GrowState gsc = growTreeNear(otherTree, tgi, rmotion, otherTreeLock);
               if (gsc == TRAPPED)
                 tgi.start = !tgi.start;
 
               while (gsc == ADVANCED)
-                gsc = growTreeNear(otherTree, tgi, rmotion);
+                gsc = growTreeNear(otherTree, tgi, rmotion, otherTreeLock);
 
               /* update distance between trees */
               const double newDist = tree->getDistanceFunction()(addedMotion, otherTree->nearest(addedMotion));
@@ -195,7 +196,7 @@ namespace ompl_near_projection {
     }
 
     ompl::geometric::RRTConnect::GrowState NearRRTConnect::growTreeNear(TreeData &tree, TreeGrowingInfo &tgi,
-                                                                        Motion *rmotion) {
+                                                                        Motion *rmotion, std::mutex& treeLock) {
 
       NearProjectedStateSpacePtr spaceNear = std::dynamic_pointer_cast<NearProjectedStateSpace>(si_->getStateSpace());
       if(!spaceNear){
@@ -204,7 +205,9 @@ namespace ompl_near_projection {
       }
 
       /* find closest state in the tree */
+      treeLock.lock();
       Motion *nmotion = tree->nearest(rmotion);
+      treeLock.unlock();
 
       /* assume we can reach the state we go towards */
       bool reach = false;
@@ -246,7 +249,9 @@ namespace ompl_near_projection {
               motion->state = states[i];
               motion->parent = nmotion;
               motion->root = nmotion->root;
+              treeLock.lock();
               tree->add(motion);
+              treeLock.unlock();
 
               nmotion = motion;
             }
@@ -259,7 +264,9 @@ namespace ompl_near_projection {
           si_->copyState(motion->state, dstate);
           motion->parent = nmotion;
           motion->root = nmotion->root;
+          treeLock.lock();
           tree->add(motion);
+          treeLock.unlock();
 
           tgi.xmotion = motion;
         }

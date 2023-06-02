@@ -1,7 +1,8 @@
-#ifndef OMPL_NEAR_PROJECTION_NEARRRTConnect_H
-#define OMPL_NEAR_PROJECTION_NEARRRTConnect_H
+#ifndef OMPL_NEAR_PROJECTION_NEARRRTCONNECT_H
+#define OMPL_NEAR_PROJECTION_NEARRRTCONNECT_H
 
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
+#include <mutex>
 
 namespace ompl_near_projection {
   namespace geometric {
@@ -15,8 +16,11 @@ namespace ompl_near_projection {
 
     protected:
       /** \brief Grow a tree towards a random state */
-      ompl::geometric::RRTConnect::GrowState growTreeNear(TreeData &tree, TreeGrowingInfo &tgi, Motion *rmotion);
+      // この関数はthread safe.
+      ompl::geometric::RRTConnect::GrowState growTreeNear(TreeData &tree, TreeGrowingInfo &tgi, Motion *rmotion, std::mutex& treeLock);
 
+      std::mutex tStartLock_;
+      std::mutex tGoalLock_;
     };
   }
 };

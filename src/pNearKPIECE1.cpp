@@ -24,7 +24,7 @@ namespace ompl_near_projection {
 
       ompl::geometric::Discretization<Motion>::Coord xcoord(projectionEvaluator_->getDimension());
 
-      std::shared_ptr<NearProjectedStateSampler> sampler_near = std::dynamic_pointer_cast<NearProjectedStateSampler>(sampler_); // ここがKPIECE1と異なる
+      std::shared_ptr<NearProjectedStateSampler> sampler_near = std::dynamic_pointer_cast<NearProjectedStateSampler>(sampler_); // ここがRRTConnectと異なる
       if (!sampler_near) {
         OMPL_ERROR("%s: Sampler is not <NearProjectedStateSampler!", getName().c_str());
         return;
