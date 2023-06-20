@@ -6,6 +6,7 @@ namespace ompl_near_projection {
     if(goals.size()>0) goal_ = goals[0];
     goals_ = goals;
     solutionsForEachGoal_.resize(goals.size());
+    addSolutionPathForAGoalCalled_ = false;
   }
   const std::vector<NearGoalSpacePtr> &NearProblemDefinition::getGoals() const {
     return goals_;
@@ -16,7 +17,8 @@ namespace ompl_near_projection {
   }
 
   ompl::base::PathPtr NearProblemDefinition::getSolutionPathForAGoal(unsigned int goalid) const {
-    return solutionsForEachGoal_[goalid];
+    if(goalid==0 && solutionsForEachGoal_.size() == 1 && !addSolutionPathForAGoalCalled_) return getSolutionPath(); // plannerがaddSolutionPathだけつかう場合のため
+    else return solutionsForEachGoal_[goalid];
   }
 
   void NearProblemDefinition::addSolutionPathForAGoal(unsigned int goalid, const ompl::base::PathPtr &path, bool approximate, double difference,
@@ -31,6 +33,7 @@ namespace ompl_near_projection {
   void NearProblemDefinition::addSolutionPathForAGoal(unsigned int goalid, const ompl::base::PlannerSolution &sol) {
     solutionsForEachGoal_[goalid] = sol.path_;
     addSolutionPath(sol);
+    addSolutionPathForAGoalCalled_ = true;
   }
 
   void NearProblemDefinition::clearSolutionPathsForAllGoals() {

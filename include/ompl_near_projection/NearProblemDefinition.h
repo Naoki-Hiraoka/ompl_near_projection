@@ -35,6 +35,7 @@ namespace ompl_near_projection {
     std::vector<NearGoalSpacePtr> goals_;
     std::vector<ompl::base::PathPtr> solutionsForEachGoal_;
     bool findAllGoals_ = false;
+    bool addSolutionPathForAGoalCalled_ = false;
   };
 
 };
