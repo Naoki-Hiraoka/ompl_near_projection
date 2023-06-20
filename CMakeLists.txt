@@ -31,6 +31,7 @@ add_library(${PROJECT_NAME}
   src/NearGoalSpace.cpp
   src/NearKPIECE1.cpp
   src/NearEST.cpp
+  src/pNearEST.cpp
   src/pNearKPIECE1.cpp
   src/NearRRTConnect.cpp
   src/pNearRRTConnect.cpp
