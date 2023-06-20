@@ -124,13 +124,6 @@ namespace ompl_near_projection {
           }
 
         bool solved = false;
-        bool approximate = false;
-        if (solution == nullptr)
-          {
-            solution = approxsol;
-            approximate = true;
-          }
-
         if (solution != nullptr)
           {
             lastGoalMotion_ = solution;
@@ -147,7 +140,7 @@ namespace ompl_near_projection {
             auto path(std::make_shared<ompl::geometric::PathGeometric>(si_));
             for (int i = mpath.size() - 1; i >= 0; --i)
               path->append(mpath[i]->state);
-            pdef_->addSolutionPath(path, approximate, approxdif, getName());
+            pdef_->addSolutionPath(path, false, approxdif, getName());
             solved = true;
           }
 
@@ -158,7 +151,7 @@ namespace ompl_near_projection {
 
         OMPL_INFORM("%s: Created %u states", getName().c_str(), nn_->size());
 
-        return {solved, approximate};
+        return {solved, false};
       }
 
 

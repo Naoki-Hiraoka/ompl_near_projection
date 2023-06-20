@@ -79,6 +79,7 @@ namespace ompl_near_projection {
             if(pdef_near_->getSolutionPathForAGoal(i) != nullptr) continue;
             else has_unsolved = true;
 
+            if(rng_.uniform01() >= goalBias_) continue;
             bool solv = goals[i]->sampleTo(xstate, existing->state, &dist); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
           /* create a motion */
             auto *motion2 = new Motion(si_);

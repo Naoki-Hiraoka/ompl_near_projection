@@ -1,16 +1,16 @@
-#ifndef OMPL_NEAR_PROJECTION_PNEAREST_H
-#define OMPL_NEAR_PROJECTION_PNEAREST_H
+#ifndef OMPL_NEAR_PROJECTION_PNEARRRT_H
+#define OMPL_NEAR_PROJECTION_PNEARRRT_H
 
-#include <ompl_near_projection/NearEST.h>
+#include <ompl_near_projection/NearRRT.h>
 #include <thread>
 #include <mutex>
 
 namespace ompl_near_projection {
   namespace geometric {
-    class pNearEST : public NearEST {
+    class pNearRRT : public NearRRT {
     public:
-      pNearEST(const ompl::base::SpaceInformationPtr &si) :
-        NearEST(si)
+      pNearRRT(const ompl::base::SpaceInformationPtr &si, bool addIntermediateStates = false) :
+        NearRRT(si, addIntermediateStates)
       {}
 
       ompl::base::PlannerStatus solve(const ompl::base::PlannerTerminationCondition &ptc) override;
