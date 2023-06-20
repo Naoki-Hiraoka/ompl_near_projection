@@ -86,9 +86,8 @@ namespace ompl_near_projection{
         }
         freeState(scratch);
         freeState(previous);
-        freeState(intermediateStates[0]);
+        for(int i=0;i+1<intermediateStates.size();i++) freeState(intermediateStates[i]);
         intermediateStates[0] = intermediateStates.back();
-        for(int i=1;i+1<intermediateStates.size();i++) freeState(intermediateStates[i]);
         intermediateStates.resize(1);
         return true;
       }
@@ -109,9 +108,8 @@ namespace ompl_near_projection{
         }
         freeState(scratch);
         freeState(previous);
-        freeState(intermediateStatesInv[0]);
+        for(int i=0;i+1<intermediateStatesInv.size();i++) freeState(intermediateStatesInv[i]);
         intermediateStatesInv[0] = intermediateStatesInv.back();
-        for(int i=1;i+1<intermediateStatesInv.size();i++) freeState(intermediateStatesInv[i]);
         intermediateStatesInv.resize(1);
         return true;
       }
