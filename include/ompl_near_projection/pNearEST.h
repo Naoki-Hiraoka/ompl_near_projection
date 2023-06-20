@@ -44,7 +44,7 @@ namespace ompl_near_projection {
 
       std::mutex motionLock_;
       unsigned int threadCount_ = 2;
-      unsigned int sleepUs_ = 10 * 1000;
+      unsigned int sleepUs_ = 1 * 1000;
     };
   }
 };
