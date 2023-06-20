@@ -9,6 +9,7 @@
 #include <ompl_near_projection/NearKPIECE1.h>
 #include <ompl_near_projection/NearEST.h>
 #include <ompl_near_projection/pNearEST.h>
+#include <ompl_near_projection/NearRRT.h>
 #include <ompl_near_projection/pNearKPIECE1.h>
 #include <ompl_near_projection/NearRRTConnect.h>
 #include <ompl_near_projection/pNearRRTConnect.h>
