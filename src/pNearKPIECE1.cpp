@@ -153,7 +153,7 @@ namespace ompl_near_projection {
       if (!sampler_)
         sampler_ = si_->allocStateSampler();
 
-      OMPL_INFORM("%s: Starting planning with %u states already in datastructure", getName().c_str(),
+      OMPL_INFORM("p%s: Starting planning with %u states already in datastructure", getName().c_str(),
                   disc2_.getMotionCount());
 
       SolutionInfo sol;

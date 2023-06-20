@@ -42,7 +42,7 @@ namespace ompl_near_projection {
         return ompl::base::PlannerStatus::CRASH;
       }
 
-      OMPL_INFORM("%s: Starting planning with %d states already in datastructure", getName().c_str(),
+      OMPL_INFORM("p%s: Starting planning with %d states already in datastructure", getName().c_str(),
                   (int)(tStart_->size() + tGoal_->size()));
 
       SolutionInfo sol;
