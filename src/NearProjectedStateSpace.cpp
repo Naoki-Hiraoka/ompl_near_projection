@@ -60,7 +60,7 @@ namespace ompl_near_projection{
 
     const double max = dist * lambda_;
 
-    auto previous = cloneState(from);
+    NearProjectedStateSpace::StateType* previous = static_cast<NearProjectedStateSpace::StateType*>(cloneState(from));
     auto scratch = allocState();
 
     auto &&svc = si_->getStateValidityChecker();
@@ -79,6 +79,7 @@ namespace ompl_near_projection{
           copyState(scratch, intermediateStates[i]); // たまにIkの誤差でisValidではないことがあるが、やむなし
           if(distance(previous, scratch) < delta_) continue;
           NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
+          for(int j=0;j<tmp_state->intermediateStates.size();j++) freeState(tmp_state->intermediateStates[j]);
           tmp_state->intermediateStates.resize(1);
           tmp_state->intermediateStates[0] = cloneState(previous);
           geodesic->push_back(tmp_state);
@@ -101,6 +102,7 @@ namespace ompl_near_projection{
           copyState(scratch, intermediateStatesInv[i]); // たまにIkの誤差でisValidではないことがあるが、やむなし
           if(distance(previous, scratch) < delta_) continue;
           NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
+          for(int j=0;j<tmp_state->intermediateStates.size();j++) freeState(tmp_state->intermediateStates[j]);
           tmp_state->intermediateStates.resize(1);
           tmp_state->intermediateStates[0] = cloneState(previous);
           geodesic->push_back(tmp_state);
@@ -141,6 +143,7 @@ namespace ompl_near_projection{
           // Store the new state
           if (geodesic != nullptr){
             NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
+            for(int j=0;j<tmp_state->intermediateStates.size();j++) freeState(tmp_state->intermediateStates[j]);
             tmp_state->intermediateStates.resize(1);
             tmp_state->intermediateStates[0] = cloneState(previous);
             geodesic->push_back(tmp_state);
