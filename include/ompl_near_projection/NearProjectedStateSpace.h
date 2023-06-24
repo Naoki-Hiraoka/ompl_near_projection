@@ -74,6 +74,8 @@ namespace ompl_near_projection{
 
     void interpolateRaw(const ompl::base::State *from, const ompl::base::State *to, const double t,
                         ompl::base::State *state) const;
+    // 各要素ごとにfromからの変位がmaxDistance以下になる範囲内でtoに近づくstateを返す.
+    virtual void elementWiseDistanceLimit(const ompl::base::State *from, const ompl::base::State *to, double maxDistance, ompl::base::State *state) = 0;
 
   protected:
     NearConstraintPtr nearConstraint_;
