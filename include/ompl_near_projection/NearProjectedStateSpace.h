@@ -35,10 +35,10 @@ namespace ompl_near_projection{
         : ProjectedStateSpace::StateType(space), space_(space) {
       }
       ~StateType() {
-        for(int i=0;i<intermediateStates.size();i++) space_->freeState(intermediateStates[i]);
+        for(int i=0;i<intermediateStates.size();i++) for(int j=0;j<intermediateStates[i].size();j++) space_->freeState(intermediateStates[i][j]);
       }
 
-      mutable std::vector<ompl::base::State*> intermediateStates; // このstateに至るまでの中間のstate. projectionの途中経過を格納したもので、constraintを厳密に満たしているとは限らない. 始点は含むが終点は含まない. これがあるなら、motionが必ず存在する.
+      mutable std::vector<std::vector<ompl::base::State*> > intermediateStates; // このstateに至るまでの中間のstate. projectionの途中経過を格納したもので、constraintを厳密に満たしているとは限らない. 始点は含むが終点は含まない. これがあるなら、motionが必ず存在する.
     protected:
       const ompl::base::ConstrainedStateSpace *space_;
     };

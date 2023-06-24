@@ -33,11 +33,16 @@ namespace ompl_near_projection{
   void NearProjectedStateSpace::copyState(ompl::base::State *destination, const ompl::base::State *source) const {
     WrapperStateSpace::copyState(destination, source);
     for(int i=0;i<destination->as<StateType>()->intermediateStates.size();i++){
-      freeState(destination->as<StateType>()->intermediateStates[i]);
+      for(int j=0;j<destination->as<StateType>()->intermediateStates[i].size();j++){
+        freeState(destination->as<StateType>()->intermediateStates[i][j]);
+      }
     }
     destination->as<StateType>()->intermediateStates.resize(source->as<StateType>()->intermediateStates.size());
     for(int i=0;i<source->as<StateType>()->intermediateStates.size();i++){
-      destination->as<StateType>()->intermediateStates[i] = cloneState(source->as<StateType>()->intermediateStates[i]);
+      destination->as<StateType>()->intermediateStates[i].resize(source->as<StateType>()->intermediateStates[i].size());
+      for(int j=0;j<source->as<StateType>()->intermediateStates[i].size();j++){
+        destination->as<StateType>()->intermediateStates[i][j] = cloneState(source->as<StateType>()->intermediateStates[i][j]);
+      }
     }
   }
 
@@ -61,61 +66,80 @@ namespace ompl_near_projection{
     const double max = dist * lambda_;
 
     NearProjectedStateSpace::StateType* previous = static_cast<NearProjectedStateSpace::StateType*>(cloneState(from));
-    auto scratch = allocState();
+    for(int j=0;j<previous->intermediateStates.size();j++) for(int k=0;k<previous->intermediateStates[j].size();k++) freeState(previous->intermediateStates[j][k]);
+    previous->intermediateStates.clear();
+    NearProjectedStateSpace::StateType*  scratch = static_cast<NearProjectedStateSpace::StateType*>(allocState());
 
     auto &&svc = si_->getStateValidityChecker();
 
-    std::vector<ompl::base::State*>& intermediateStates = static_cast<const NearProjectedStateSpace::StateType*>(to)->intermediateStates;
-    std::vector<ompl::base::State*>& intermediateStatesInv = static_cast<const NearProjectedStateSpace::StateType*>(from)->intermediateStates;
     std::vector<ompl::base::State *> path{cloneState(from)};
 
-    if(intermediateStates.size() > 0 && distance(intermediateStates[0], from) < delta_) {
+    std::vector<std::vector<ompl::base::State*> >& intermediateStates = static_cast<const NearProjectedStateSpace::StateType*>(to)->intermediateStates;
+    int idx = -1;
+    for(int i=0;i<intermediateStates.size();i++){
+      if(intermediateStates[i].size() > 0 && distance(intermediateStates[i][0], from) < delta_){
+        idx = i;
+        break;
+      }
+    }
+    if(idx >= 0) {
       if(geodesic == nullptr){
         freeState(scratch);
         freeState(previous);
         return true;
       }else{
-        for(int i=1;i<intermediateStates.size();i++){ // 始点はふくまない
-          copyState(scratch, intermediateStates[i]); // たまにIkの誤差でisValidではないことがあるが、やむなし
+        for(int i=1;i<intermediateStates[idx].size();i++){ // 始点はふくまない
+          copyState(scratch, intermediateStates[idx][i]); // たまにIkの誤差でisValidではないことがあるが、やむなし
+          for(int j=0;j<scratch->intermediateStates.size();j++) for(int k=0;k<scratch->intermediateStates[j].size();k++) freeState(scratch->intermediateStates[j][k]);
+          scratch->intermediateStates.clear();
           if(distance(previous, scratch) < delta_) continue;
           NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
-          for(int j=0;j<tmp_state->intermediateStates.size();j++) freeState(tmp_state->intermediateStates[j]);
-          tmp_state->intermediateStates.resize(1);
-          tmp_state->intermediateStates[0] = cloneState(previous);
+          tmp_state->intermediateStates.push_back(std::vector<ompl::base::State*>{cloneState(previous)});
           geodesic->push_back(tmp_state);
           copyState(previous, scratch);
         }
         freeState(scratch);
         freeState(previous);
-        for(int i=0;i+1<intermediateStates.size();i++) freeState(intermediateStates[i]);
-        intermediateStates[0] = intermediateStates.back();
-        intermediateStates.resize(1);
+        if(intermediateStates[idx].size() > 1){
+          intermediateStates.push_back(std::vector<ompl::base::State*>{cloneState(intermediateStates[idx].back())});
+        }
         return true;
       }
-    }else if(intermediateStatesInv.size() > 0 && distance(intermediateStatesInv[0], to) < delta_) {
+    }
+
+    std::vector<std::vector<ompl::base::State*> >& intermediateStatesInv = static_cast<const NearProjectedStateSpace::StateType*>(from)->intermediateStates;
+    for(int i=0;i<intermediateStatesInv.size();i++){
+      if(intermediateStatesInv[i].size() > 0 && distance(intermediateStatesInv[i][0], to) < delta_){
+        idx = i;
+        break;
+      }
+    }
+    if(idx >= 0) {
       if(geodesic == nullptr){
         freeState(scratch);
         freeState(previous);
         return true;
       }else{
-        for(int i=intermediateStatesInv.size()-1;i>=1;i--){ // 始点はふくまない
-          copyState(scratch, intermediateStatesInv[i]); // たまにIkの誤差でisValidではないことがあるが、やむなし
+        for(int i=intermediateStatesInv[idx].size()-1;i>=1;i--){ // 始点はふくまない
+          copyState(scratch, intermediateStatesInv[idx][i]); // たまにIkの誤差でisValidではないことがあるが、やむなし
+          for(int j=0;j<scratch->intermediateStates.size();j++) for(int k=0;k<scratch->intermediateStates[j].size();k++) freeState(scratch->intermediateStates[j][k]);
+          scratch->intermediateStates.clear();
           if(distance(previous, scratch) < delta_) continue;
           NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
-          for(int j=0;j<tmp_state->intermediateStates.size();j++) freeState(tmp_state->intermediateStates[j]);
-          tmp_state->intermediateStates.resize(1);
-          tmp_state->intermediateStates[0] = cloneState(previous);
+          tmp_state->intermediateStates.push_back(std::vector<ompl::base::State*>{cloneState(previous)});
           geodesic->push_back(tmp_state);
           copyState(previous, scratch);
         }
         freeState(scratch);
         freeState(previous);
-        for(int i=0;i+1<intermediateStatesInv.size();i++) freeState(intermediateStatesInv[i]);
-        intermediateStatesInv[0] = intermediateStatesInv.back();
-        intermediateStatesInv.resize(1);
+        if(intermediateStatesInv[idx].size() > 1){
+          intermediateStatesInv.push_back(std::vector<ompl::base::State*>{cloneState(intermediateStatesInv[idx].back())});
+        }
         return true;
       }
-    }else{
+    }
+
+    {
       do
         {
           WrapperStateSpace::interpolate(previous, to, std::min(1.0, delta_ / dist), scratch);
@@ -141,27 +165,20 @@ namespace ompl_near_projection{
           dist = newDist;
 
           // Store the new state
+          NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
+          for(int j=0;j<tmp_state->intermediateStates.size();j++) for(int k=0;k<tmp_state->intermediateStates[j].size();k++) freeState(tmp_state->intermediateStates[j][k]);
+          tmp_state->intermediateStates.clear();
+
+          path.push_back(tmp_state);
           if (geodesic != nullptr){
-            NearProjectedStateSpace::StateType* tmp_state = static_cast<NearProjectedStateSpace::StateType*>(cloneState(scratch));
-            for(int j=0;j<tmp_state->intermediateStates.size();j++) freeState(tmp_state->intermediateStates[j]);
-            tmp_state->intermediateStates.resize(1);
-            tmp_state->intermediateStates[0] = cloneState(previous);
-            geodesic->push_back(tmp_state);
-          }else{
-            path.push_back(cloneState(scratch));
+            geodesic->push_back(cloneState(tmp_state));
           }
           copyState(previous, scratch);
 
         } while (dist >= tolerance);
 
       if(dist <= tolerance){
-        for(int i=0;i<intermediateStates.size();i++) freeState(intermediateStates[i]);
-        if (geodesic != nullptr) {
-          intermediateStates.resize(1);
-          intermediateStates[0] = cloneState(from);
-        }else{
-          intermediateStates = path;
-        }
+        intermediateStates.push_back(path);
         return true;
       }else{
         for(int i=0;i<path.size();i++) freeState(path[i]);
