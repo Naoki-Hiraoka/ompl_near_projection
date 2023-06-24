@@ -42,7 +42,7 @@ namespace ompl_near_projection {
 
       void threadSolve(unsigned int tid, const ompl::base::PlannerTerminationCondition &ptc, SolutionInfo *sol);
 
-      std::mutex discLock_;
+      std::mutex pisLock_;
       unsigned int threadCount_ = 2;
       unsigned int sleepUs_ = 1 * 1000;
 

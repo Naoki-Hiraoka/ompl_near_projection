@@ -145,6 +145,7 @@ namespace ompl_near_projection {
           bool currentStartTree = startTree_;
           startTreeLock_.unlock();
 
+          pisLock_.lock();
           if (tGoal_->size() == 0 || pis_.getSampledGoalsCount() < tGoal_->size() / 2)
             {
               const ompl::base::State *st = tGoal_->size() == 0 ? pis_.nextGoal(ptc) : pis_.nextGoal();
@@ -164,6 +165,7 @@ namespace ompl_near_projection {
                   break;
                 }
             }
+          pisLock_.unlock();
 
           /* sample random state */
           sampler_near->sampleUniformRaw(rstate);
