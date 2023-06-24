@@ -128,10 +128,10 @@ namespace ompl_near_projection {
       auto *rmotion = new Motion(si_);
       ompl::base::State *rstate = rmotion->state;
 
-      while(sol->startSolution == nullptr && !ptc) {
-        if(tStart_->size() < tid + 1) usleep(sleepUs_); // これがないと、start state近くの点を過剰にsamplingしてしまってtree全体が歪む
-        else break;
-      }
+      // while(sol->startSolution == nullptr && !ptc) {
+      //   if(tStart_->size() < tid + 1) usleep(sleepUs_); // これがないと、start state近くの点を過剰にsamplingしてしまってtree全体が歪む? RRTの場合関係ない
+      //   else break;
+      // }
 
       while (sol->startSolution == nullptr && !ptc)
         {
