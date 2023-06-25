@@ -105,13 +105,13 @@ namespace ompl_near_projection {
               while (gsc == ADVANCED)
                 gsc = growTreeNear(otherTree, tgi, rmotion, otherTreeLock);
 
-              /* update distance between trees */
-              const double newDist = tree->getDistanceFunction()(addedMotion, otherTree->nearest(addedMotion));
-              if (newDist < distanceBetweenTrees_)
-                {
-                  distanceBetweenTrees_ = newDist;
-                  // OMPL_INFORM("Estimated distance to go: %f", distanceBetweenTrees_);
-                }
+              // /* update distance between trees */
+              // const double newDist = tree->getDistanceFunction()(addedMotion, otherTree->nearest(addedMotion));
+              // if (newDist < distanceBetweenTrees_)
+              //   {
+              //     distanceBetweenTrees_ = newDist;
+              //     // OMPL_INFORM("Estimated distance to go: %f", distanceBetweenTrees_);
+              //   }
 
               Motion *startMotion = tgi.start ? tgi.xmotion : addedMotion;
               Motion *goalMotion = tgi.start ? addedMotion : tgi.xmotion;

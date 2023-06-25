@@ -136,14 +136,15 @@ namespace ompl_near_projection {
       while (sol->startSolution == nullptr && !ptc)
         {
           startTreeLock_.lock();
-          TreeData &tree = startTree_ ? tStart_ : tGoal_;
-          std::mutex &treeLock = startTree_ ? tStartLock_ : tGoalLock_;
-          tgi.start = startTree_;
-          startTree_ = !startTree_;
-          TreeData &otherTree = startTree_ ? tStart_ : tGoal_;
-          std::mutex &otherTreeLock = startTree_ ? tStartLock_ : tGoalLock_;
           bool currentStartTree = startTree_;
+          startTree_ = !startTree_;
           startTreeLock_.unlock();
+          TreeData &tree = currentStartTree ? tStart_ : tGoal_;
+          std::mutex &treeLock = currentStartTree ? tStartLock_ : tGoalLock_;
+          tgi.start = currentStartTree;
+          currentStartTree = !currentStartTree;
+          TreeData &otherTree = currentStartTree ? tStart_ : tGoal_;
+          std::mutex &otherTreeLock = currentStartTree ? tStartLock_ : tGoalLock_;
 
           pisLock_.lock();
           if (tGoal_->size() == 0 || pis_.getSampledGoalsCount() < tGoal_->size() / 2)
@@ -191,15 +192,15 @@ namespace ompl_near_projection {
               while (gsc == ADVANCED)
                 gsc = growTreeNear(otherTree, tgi, rmotion, otherTreeLock);
 
-              /* update distance between trees */
-              otherTreeLock.lock();
-              const double newDist = tree->getDistanceFunction()(addedMotion, otherTree->nearest(addedMotion));
-              otherTreeLock.unlock();
-              if (newDist < distanceBetweenTrees_)
-                {
-                  distanceBetweenTrees_ = newDist;
-                  // OMPL_INFORM("Estimated distance to go: %f", distanceBetweenTrees_);
-                }
+              // /* update distance between trees */
+              // otherTreeLock.lock();
+              // const double newDist = tree->getDistanceFunction()(addedMotion, otherTree->nearest(addedMotion));
+              // otherTreeLock.unlock();
+              // if (newDist < distanceBetweenTrees_)
+              //   {
+              //     distanceBetweenTrees_ = newDist;
+              //     // OMPL_INFORM("Estimated distance to go: %f", distanceBetweenTrees_);
+              //   }
 
               Motion *startMotion = tgi.start ? tgi.xmotion : addedMotion;
               Motion *goalMotion = tgi.start ? addedMotion : tgi.xmotion;
