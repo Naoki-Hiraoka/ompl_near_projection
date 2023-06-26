@@ -222,6 +222,8 @@ namespace ompl_near_projection {
       //   }
       spaceNear->elementWiseDistanceLimit(nmotion->state, rmotion->state, maxDistance_, dstate); // 全体のノルムでやると、SE3の並進成分が大きすぎて、SE3の回転成分がほとんど動かなくなってしまうので
 
+      double curdist = si_->distance(nmotion->state, rmotion->state);
+
       // constraintを満たす範囲で、nmotion->stateを出発点として、可能な限りdstateに近づくように移動して、結果をdstateに入れて返す
       spaceNear->getNearConstraint()->projectNearValid(dstate, nmotion->state);
 
@@ -229,7 +231,8 @@ namespace ompl_near_projection {
         reach = true;
       }
 
-      if(!reach && si_->distance(dstate, nmotion->state) <= spaceNear->getDelta()){
+      double newdist = si_->distance(dstate, rmotion->state);
+      if(!reach && (si_->distance(dstate, nmotion->state) <= spaceNear->getDelta() || newdist > curdist)){ // newdist > curdistの条件が無いと、振動的になったときに無限にadvanced扱いになってしまう
         return TRAPPED;
       }
 
