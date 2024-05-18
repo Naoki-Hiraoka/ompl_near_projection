@@ -6,6 +6,12 @@ namespace ompl_near_projection {
   namespace geometric {
     void pNearKPIECE1::threadSolve(unsigned int tid, const ompl::base::PlannerTerminationCondition &ptc,
                                    SolutionInfo *sol) {
+      NearProjectedStateSpacePtr spaceNear = std::dynamic_pointer_cast<NearProjectedStateSpace>(si_->getStateSpace());
+      if(!spaceNear){
+        OMPL_ERROR("%s: Sapace is not NearProjectedStateSpace!", getName().c_str());
+        return;
+      }
+
       NearProblemDefinitionPtr pdef_near_ = std::dynamic_pointer_cast<NearProblemDefinition>(pdef_);
       if(!pdef_near_){
         OMPL_ERROR("%s: pdef is not NearProblemDefinition!", getName().c_str());
@@ -58,6 +64,9 @@ namespace ompl_near_projection {
           assert(existing);
 
           sampler_near->sampleUniformNearValid(xstate, existing->state, maxDistance_); // sampleUniformNearValidの出力へのmotionが存在する前提. checkMotionを省略することで高速化
+          if(si_->distance(existing->state, xstate) <= spaceNear->getDelta()){ // stuck
+            continue;
+          }
           double dist = (goals.size()==1) ? goals[0]->distanceGoal(xstate) : 0.0;
           /* create a motion */
           auto *motion = new Motion(si_);
@@ -81,7 +90,10 @@ namespace ompl_near_projection {
 
             if(rng_.uniform01() >= goalBias_) continue;
             bool solv = goals[i]->sampleTo(xstate, existing->state, &dist); // sampleToの出力へのmotionが存在する前提. checkMotionを省略することで高速化
-          /* create a motion */
+            if(si_->distance(existing->state, xstate) <= spaceNear->getDelta()){ // stuck
+              continue;
+            }
+            /* create a motion */
             auto *motion2 = new Motion(si_);
             si_->copyState(motion2->state, xstate);
             motion2->parent = existing;
