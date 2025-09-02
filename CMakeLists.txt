@@ -22,7 +22,11 @@ include_directories(
  ${catkin_INCLUDE_DIRS}
  ${OMPL_INCLUDE_DIRS}
  ${EIGEN_INCLUDE_DIRS}
-)
+ )
+
+link_directories(
+ ${OMPL_LIBRARY_DIRS}
+ )
 
 add_library(${PROJECT_NAME}
   src/NearProjectedStateSpace.cpp
