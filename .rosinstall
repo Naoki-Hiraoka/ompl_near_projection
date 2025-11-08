@@ -1,5 +1,5 @@
-# melodicにaptで入る1.4.2にはGoalSpace.hが無いので
+# noeticにaptで入る1.6.0には https://github.com/ompl/ompl/pull/1020 の問題があるので
 - git:
     local-name: ompl
     uri: https://github.com/ompl/ompl.git
-    version: 1.6.0
+    version: 1.7.0
